@@ -19,13 +19,13 @@ namespace Disruptive_Advantage_Customization
                 if (context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
                 {
                     Entity targetEntity = (Entity)context.InputParameters["Target"];
-                 
+                    tracingService.Trace("1");
                     var status = targetEntity.GetAttributeValue<OptionSetValue>("statuscode");
-                 
+                    tracingService.Trace("2");
                     var batch = targetEntity.GetAttributeValue<EntityReference>("dia_batch");
-                    
-                    var batchstatus = service.Retrieve(batch.LogicalName, batch.Id, new ColumnSet("statuscode"));
-                  
+                    tracingService.Trace("3");
+                    var batchstatus = batch == null ? null : service.Retrieve(batch.LogicalName, batch.Id, new ColumnSet("statuscode"));
+                    tracingService.Trace("4");
                     if (batchstatus != null && batchstatus.GetAttributeValue<OptionSetValue>("statuscode").Value == 914440000)
                     {
 
@@ -34,28 +34,29 @@ namespace Disruptive_Advantage_Customization
                     }
 
                     #region vessel empty or full  
-
+                    tracingService.Trace("5");
                     var type = targetEntity.GetAttributeValue<OptionSetValue>("dia_type");
                     /*var occupation = targetEntity.GetAttributeValue<decimal>("dia_occupation");
                     var capacity = targetEntity.GetAttributeValue<decimal>("dia_capacity");*/
                     var vessel = targetEntity.GetAttributeValue<EntityReference>("dia_vessel");
+                    tracingService.Trace("6");
 
-              /*
-                    var vesselInfo = vessel != null ? service.Retrieve(vessel.LogicalName, vessel.Id, new ColumnSet("dia_occupation")) : null;
-                 
-                    var occupation = Decimal.ToInt32(vesselInfo.GetAttributeValue<decimal>("dia_occupation"));
-                    if (type.Value == 914440002 && occupation != 0)
-                    {
-                       
-                        throw new InvalidPluginExecutionException("Can't create a job because the destination vessel isn't empty ");
-                       
-                    }*/
+                    /*
+                          var vesselInfo = vessel != null ? service.Retrieve(vessel.LogicalName, vessel.Id, new ColumnSet("dia_occupation")) : null;
+
+                          var occupation = Decimal.ToInt32(vesselInfo.GetAttributeValue<decimal>("dia_occupation"));
+                          if (type.Value == 914440002 && occupation != 0)
+                          {
+
+                              throw new InvalidPluginExecutionException("Can't create a job because the destination vessel isn't empty ");
+
+                          }*/
                     #endregion
 
 
                     #region Date Verification (Schedule Start and Schedule End)
 
-                    if(vessel != null)
+                    if (vessel != null)
                     {
                      
                         var scheduleStart = targetEntity.GetAttributeValue<DateTime>("dia_schelduledstart");

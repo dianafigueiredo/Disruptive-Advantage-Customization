@@ -22,29 +22,11 @@ namespace Disruptive_Advantage_Customization
 
                     var vesselInfo = targetEntity.GetAttributeValue<EntityReference>("dia_vessel");
 
-
-
                     var quantity = targetEntity.GetAttributeValue<decimal?>("dia_quantity") == null ? 0 : targetEntity.GetAttributeValue<decimal>("dia_quantity");
 
                     var type = targetEntity.GetAttributeValue<OptionSetValue>("dia_type");
 
-
-                    // var referencetype = targetEntity.GetAttributeValue<OptionSetValue>("dia_referencetype");
-
-
-                    // var location = targetEntity.GetAttributeValue<EntityReference>("dia_location");
-
-
                     var batch = targetEntity.GetAttributeValue<EntityReference>("dia_batch");
-
-
-
-                    // var stage = targetEntity.GetAttributeValue<EntityReference>("dia_stage");
-
-
-                    //   var reference = targetEntity.GetAttributeValue<string>("dia_reference");
-
-
 
                     #region Update Vessel. Job type Intake
                     if (type.Value == 914440002 && vesselInfo != null)
@@ -64,29 +46,21 @@ namespace Disruptive_Advantage_Customization
                         }
                     }
                     #endregion
+
+
                     #region create transaction 
-
-
                     {
 
                         var createTransaction = new Entity("dia_vesselstocktransactions");
 
                         createTransaction.Attributes["dia_quantity"] = quantity;
-                        //   createTransaction.Attributes["dia_referencetype"] = referencetype;
-
-                        // createTransaction.Attributes["dia_location"] = location;
-
+                 
                         createTransaction.Attributes["dia_batch"] = batch;
-                        //createTransaction.Attributes["dia_stage"] = stage;
-
-                        //  createTransaction.Attributes["dia_reference"] = reference;
-
 
                         service.Create(createTransaction);
                     }
-
-
                     #endregion
+
 
                     #region Assign composition from batch to vessel
                     
@@ -117,11 +91,10 @@ namespace Disruptive_Advantage_Customization
                         }
                     }
 
-                     
                     #endregion
 
                 }
-              
+
             }
             catch (Exception ex)
             {
