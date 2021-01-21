@@ -23,23 +23,31 @@ namespace Disruptive_Advantage_Customization
                     if (targetEntity.Contains("statuscode") && targetEntity.GetAttributeValue<OptionSetValue>("statuscode").Value == 914440000)
                     {
                         var statuscode = targetEntity.GetAttributeValue<OptionSetValue>("statuscode");
-
                         var vesselInfo = targetEntity.GetAttributeValue<EntityReference>("dia_vessel");
-
                         var quantity = targetEntity.GetAttributeValue<decimal?>("dia_quantity") == null ? 0 : targetEntity.GetAttributeValue<decimal>("dia_quantity");
-
                         var vesselCapacity = service.Retrieve(vesselInfo.LogicalName, vesselInfo.Id, new ColumnSet("dia_capacity"));
-
-                        if (vesselCapacity != null && vesselCapacity.Contains("dia_capacity"))
+                        /*if (vesselCapacity != null && vesselCapacity.Contains("dia_capacity"))
                         {
                             var remainingCapacity = vesselCapacity.GetAttributeValue<decimal>("dia_capacity") - quantity;
                             var vesselUpdate = new Entity(vesselInfo.LogicalName);
                             vesselUpdate.Id = vesselInfo.Id;
                             vesselUpdate.Attributes["dia_occupation"] = quantity;
                             vesselUpdate.Attributes["dia_remainingcapacity"] = remainingCapacity;
+                            service.Update(vesselUpdate);
+                        }*/
 
+                        var queryJobDestinationVessel = new QueryExpression("dia_jobdestinationvessel");
+                        queryJobDestinationVessel.ColumnSet.AddColumns("dia_jobdestinationvesselid");
+                        queryJobDestinationVessel.Criteria.AddCondition("dia_job", ConditionOperator.Equal, targetEntity.Id);
+                        EntityCollection resultsQueryJobDestinationVessel = service.RetrieveMultiple(queryJobDestinationVessel);
+                        foreach (var vessel in resultsQueryJobDestinationVessel.Entities)
+                        {
+                            var vesselUpdate = new Entity(vessel.LogicalName);
+                            vesselUpdate.Id = vessel.Id;
+                            vesselUpdate.Attributes["statuscode"] = new OptionSetValue(914440001);
                             service.Update(vesselUpdate);
                         }
+
                     }
                     #endregion
                 }
