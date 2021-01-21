@@ -54,11 +54,11 @@ namespace Disruptive_Advantage_Customization
                     #endregion
 
 
-                    #region Date Verification (Schedule Start and Schedule End)
+                    #region Date Verification (Schedule Start and Schedule End) Desatualizado
 
                     if (vessel != null)
                     {
-                     
+                        //Este código está desatualizado. Era para quando havia lookup para o vessel.
                         var scheduleStart = targetEntity.GetAttributeValue<DateTime>("dia_schelduledstart");
                         var scheduleEnd = targetEntity.GetAttributeValue<DateTime>("dia_schelduledfinish");
                         var queryJob = new QueryExpression("dia_job");
@@ -69,7 +69,6 @@ namespace Disruptive_Advantage_Customization
                     
                         foreach (var job in resultsqueryJob.Entities)
                         {
-                            
                             if (scheduleStart > job.GetAttributeValue<DateTime>("dia_schelduledstart") && scheduleStart < job.GetAttributeValue<DateTime>("dia_schelduledfinish"))
                             {
                                 throw new InvalidPluginExecutionException("Can't create a job because the vessel is not empty in that schedule");
