@@ -64,7 +64,7 @@ namespace Disruptive_Advantage_Customization
 
                     #region Assign composition from batch to vessel
                     
-                    var batchComposition = batch != null ? service.Retrieve(batch.LogicalName, batch.Id, new ColumnSet("dia_composition")) : null; 
+                    var batchComposition = batch != null ? service.Retrieve(batch.LogicalName, batch.Id, new ColumnSet("dia_batchcomposition")) : null; 
                     if (type.Value == 914440002 && batchComposition != null)
                     {
                         if(vesselInfo != null)
@@ -72,8 +72,8 @@ namespace Disruptive_Advantage_Customization
                             var name= targetEntity.GetAttributeValue<string>("dia_name");
                             var occupation = targetEntity.GetAttributeValue<decimal>("dia_occupation");
                             var location = targetEntity.GetAttributeValue<EntityReference>("dia_location");
-                            var batchVessel= targetEntity.GetAttributeValue<EntityReference>("dia_batch");
-                            var compositionVessel = targetEntity.GetAttributeValue<EntityReference>("dia_composition");
+                            var batchVessel = targetEntity.GetAttributeValue<EntityReference>("dia_batch");
+                            var compositionVessel = targetEntity.GetAttributeValue<EntityReference>("dia_batchcomposition");
                             var capacityVessel = targetEntity.GetAttributeValue<EntityReference>("dia_capacity");
 
                             var createVessel = new Entity("dia_vessel");
@@ -82,15 +82,13 @@ namespace Disruptive_Advantage_Customization
                             createVessel.Attributes["dia_occupation"] = occupation;
                             createVessel.Attributes["dia_location"] = location;
                             createVessel.Attributes["dia_batch"] = batchVessel;
-                            createVessel.Attributes["dia_composition"] = compositionVessel;
+                            createVessel.Attributes["dia_batchcomposition"] = compositionVessel;
                             createVessel.Attributes["dia_capacity"] = capacityVessel;
-
 
                             service.Create(createVessel);
 
                         }
                     }
-
                     #endregion
 
                 }
