@@ -61,6 +61,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="JobDestinationVesselPreCreate.cs" />
     <Compile Include="JobPostCreate.cs" />
     <Compile Include="JobPostUpdate.cs" />
     <Compile Include="JobPreCreate.cs" />
