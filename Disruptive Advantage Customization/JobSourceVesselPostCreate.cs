@@ -24,35 +24,25 @@ namespace Disruptive_Advantage_Customization
                     var jobRef = (EntityReference)job["dia_job"];
                     var jobType = service.Retrieve(jobRef.LogicalName, jobRef.Id, new ColumnSet("dia_type", "dia_quantity"));
                     decimal sumQuantity = new decimal();
-                    tracingService.Trace("2");
+           
                     if (jobType.FormattedValues["dia_type"] == "Dispatch") {
-                        tracingService.Trace("3");
-
 
                         var query = new QueryExpression("dia_jobsourcevessel");
                         query.ColumnSet.AddColumns("dia_quantity");
                         query.Criteria.AddCondition("dia_job", ConditionOperator.Equal, jobRef.Id);
-                        tracingService.Trace("4: " + jobRef.Id);
-
+                        
                         EntityCollection resultsquery = service.RetrieveMultiple(query);
 
                         tracingService.Trace("5");
                         foreach (var vessel in resultsquery.Entities)
                         {
-                            tracingService.Trace("6");
-
                             sumQuantity += vessel.GetAttributeValue<decimal>("dia_quantity");
-
-                            tracingService.Trace("7");
                         }
 
                         var jobUpdate = new Entity(jobRef.LogicalName, jobRef.Id);
-                        tracingService.Trace("8");
-                        jobUpdate.Attributes["dia_quantity"] = sumQuantity;
-                        tracingService.Trace("9");
-
+                        jobUpdate.Attributes["dia_quantity"] = sumQuantity;   
                         service.Update(jobUpdate);
-                        tracingService.Trace("10");
+                       
 
                     }
 
