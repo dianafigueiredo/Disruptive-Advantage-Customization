@@ -1,14 +1,10 @@
 ﻿using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Disruptive_Advantage_Customization
 {
-    class JobSourceVesselPostCreate : IPlugin
+    public class JobSourceVesselPostCreate : IPlugin
     {
         public void Execute(IServiceProvider serviceProvider)
         {
@@ -21,13 +17,44 @@ namespace Disruptive_Advantage_Customization
 
                 if (context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
                 {
-                  
+
                     Entity job = (Entity)context.InputParameters["Target"];
+                    tracingService.Trace("1");
 
                     var jobRef = (EntityReference)job["dia_job"];
-                    var  jobType= service.Retrieve(jobRef.LogicalName, jobRef.Id, new ColumnSet("dia_type"));
+                    var jobType = service.Retrieve(jobRef.LogicalName, jobRef.Id, new ColumnSet("dia_type", "dia_quantity"));
+                    decimal sumQuantity = new decimal();
+                    tracingService.Trace("2");
+                    if (jobType.FormattedValues["dia_type"] == "Dispatch") {
+                        tracingService.Trace("3");
 
 
+                        var query = new QueryExpression("dia_jobsourcevessel");
+                        query.ColumnSet.AddColumns("dia_quantity");
+                        query.Criteria.AddCondition("dia_job", ConditionOperator.Equal, jobRef.Id);
+                        tracingService.Trace("4: " + jobRef.Id);
+
+                        EntityCollection resultsquery = service.RetrieveMultiple(query);
+
+                        tracingService.Trace("5");
+                        foreach (var vessel in resultsquery.Entities)
+                        {
+                            tracingService.Trace("6");
+
+                            sumQuantity += vessel.GetAttributeValue<decimal>("dia_quantity");
+
+                            tracingService.Trace("7");
+                        }
+
+                        var jobUpdate = new Entity(jobRef.LogicalName, jobRef.Id);
+                        tracingService.Trace("8");
+                        jobUpdate.Attributes["dia_quantity"] = sumQuantity;
+                        tracingService.Trace("9");
+
+                        service.Update(jobUpdate);
+                        tracingService.Trace("10");
+
+                    }
 
                 }
 
