@@ -65,6 +65,7 @@
     <Compile Include="JobPostCreate.cs" />
     <Compile Include="JobPostUpdate.cs" />
     <Compile Include="JobPreCreate.cs" />
+    <Compile Include="JobSourceVesselPostCreate.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

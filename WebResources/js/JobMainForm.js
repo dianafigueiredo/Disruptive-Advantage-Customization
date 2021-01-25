@@ -63,7 +63,7 @@ function jobTypeOnChange(executionContext) {
     }
 	else if(intake == 914440003){ //Dispatch
         setVisibleControl(formContext, "dia_batch", false);
-		setVisibleControl(formContext, "SourceVessel", false);
+		setVisibleControl(formContext, "SourceVessel", true);
 		setVisibleControl(formContext, "DestinationVessel", false);
 		setRequiredLevelControl(formContext, "dia_additive", "none");
 		setRequiredLevelControl(formContext, "dia_quantity", "required");
@@ -133,7 +133,7 @@ function jobTypeOnChange(executionContext) {
     }
 	else if(intake == 914440003){ //Dispatch
         setVisibleControl(formContext, "dia_batch", false);
-		setVisibleControl(formContext, "SourceVessel", false);
+		setVisibleControl(formContext, "SourceVessel", true);
 		setVisibleControl(formContext, "DestinationVessel", false);
 		setRequiredLevelControl(formContext, "dia_additive", "none");
 		setRequiredLevelControl(formContext, "dia_quantity", "required");
