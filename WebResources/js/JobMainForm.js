@@ -54,6 +54,7 @@ function jobTypeOnChange(executionContext) {
         setVisibleControl(formContext, "dia_batch", false);
 		setVisibleControl(formContext, "SourceVessel", true);
 		setVisibleControl(formContext, "DestinationVessel", true);
+		setVisibleControl(formContext, "dia_quantity", true);
 		setRequiredLevelControl(formContext, "dia_additive", "none");
 		//setRequiredLevelControl(formContext, "dia_quantity", "required");
     }
