@@ -92,15 +92,22 @@ namespace Disruptive_Advantage_Customization
                                 var jobSourceVesselUpdate = new Entity(sourceVessel.LogicalName);
                                 jobSourceVesselUpdate.Id = sourceVessel.Id;
                                 jobSourceVesselUpdate.Attributes["statuscode"] = new OptionSetValue(914440001);
+                                service.Update(jobSourceVesselUpdate);
                             }
                             #endregion
+
                             #region Update Destination Vessel Quantity and Composition
+
                             var queryJobDestinationVessel = new QueryExpression("dia_jobdestinationvessel");
-                            queryJobDestinationVessel.ColumnSet.AddColumns("dia_jobdestinationvesselid");
+                            queryJobDestinationVessel.ColumnSet.AddColumns("dia_jobdestinationvesselid", "dia_quantity", "dia_vessel");
                             queryJobDestinationVessel.Criteria.AddCondition("dia_job", ConditionOperator.Equal, targetEntity.Id);
+
                             EntityCollection resultsQueryJobDestinationVessel = service.RetrieveMultiple(queryJobDestinationVessel);
+
                             foreach (var jobdestinationvessel in resultsQueryJobDestinationVessel.Entities)
                             {
+                                var vesselInformation = service.Retrieve(jobdestinationvessel.GetAttributeValue<EntityReference>("dia_vessel").LogicalName, jobdestinationvessel.GetAttributeValue<EntityReference>("dia_vessel").Id, new ColumnSet("dia_occupation", "dia_composition"));
+
                                 var vesselUpdate = new Entity(jobdestinationvessel.LogicalName);
                                 vesselUpdate.Id = jobdestinationvessel.Id;
                                 vesselUpdate.Attributes["statuscode"] = new OptionSetValue(914440001);

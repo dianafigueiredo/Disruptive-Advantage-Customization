@@ -1,4 +1,4 @@
-function OnLoad (executionContext)
+function OnLoad(executionContext)
 {
 	var formContext = executionContext.getFormContext();
 	
@@ -6,10 +6,91 @@ function OnLoad (executionContext)
 	formContext.getAttribute("dia_schelduledstart").addOnChange(startDateOnChange);
 	
 	jobTypeOnChange(executionContext);
-
-	
+	QuantityLeft(executionContext);
 }
+function QuantityLeft(executionContext) {
+	var formContext = executionContext.getFormContext();
+	if (formContext.ui.getFormType() != 2) return;
 
+	var jobId = formContext.data.entity.getId();
+	var quantitySources = 0;
+	var quantityDestinations = 0;
+	if (formContext.getAttribute("dia_type").getValue() == null) return;
+
+	var jobType = formContext.getAttribute("dia_type").getValue();
+
+	if (jobType != 914440001) return;
+
+	var fetchXmlSources = [
+		"<fetch top='50'>",
+		"  <entity name='dia_jobsourcevessel'>",
+		"    <attribute name='dia_quantity' />",
+		"    <filter>",
+		"      <condition attribute='dia_job' operator='eq' value='", jobId, "'/>",
+		"    </filter>",
+		"  </entity>",
+		"</fetch>",
+	].join("");
+
+	var req = new XMLHttpRequest();
+	req.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_jobsourcevessels?fetchXml=" + encodeURIComponent(fetchXmlSources), false);
+	req.setRequestHeader("OData-MaxVersion", "4.0");
+	req.setRequestHeader("OData-Version", "4.0");
+	req.setRequestHeader("Accept", "application/json");
+	req.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+	req.onreadystatechange = function () {
+		if (this.readyState === 4) {
+			req.onreadystatechange = null;
+			if (this.status === 200) {
+				var results = JSON.parse(this.response);
+				if (results.value != null) {
+					for (var i = 0; i < results.value.length; i++) {
+						quantitySources += results.value[i]["dia_quantity"];
+					}
+				}
+			}
+
+		}
+	};
+	req.send();
+	var fetchXmlDestinations = [
+		"<fetch top='50'>",
+		"  <entity name='dia_jobdestinationvessel'>",
+		"    <attribute name='dia_quantity' />",
+		"    <filter>",
+		"      <condition attribute='dia_job' operator='eq' value='", jobId, "'/>",
+		"    </filter>",
+		"  </entity>",
+		"</fetch>",
+	].join("");
+
+	var reqDest = new XMLHttpRequest();
+	reqDest.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_jobdestinationvessels?fetchXml=" + encodeURIComponent(fetchXmlDestinations), false);
+	reqDest.setRequestHeader("OData-MaxVersion", "4.0");
+	reqDest.setRequestHeader("OData-Version", "4.0");
+	reqDest.setRequestHeader("Accept", "application/json");
+	reqDest.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+	reqDest.onreadystatechange = function () {
+		if (this.readyState === 4) {
+			reqDest.onreadystatechange = null;
+			if (this.status === 200) {
+				var results = JSON.parse(this.response);
+				if (results.value != null) {
+					for (var i = 0; i < results.value.length; i++) {
+						quantityDestinations += results.value[i]["dia_quantity"];
+					}
+				}
+			}
+
+		}
+	};
+	reqDest.send();
+
+	if (quantitySources > quantityDestinations) {
+		var aux = parseInt(quantitySources) - parseInt(quantityDestinations);
+		formContext.ui.setFormNotification("There are still " + aux + "L not allocated in a Destination Vessel.", "INFO", "1")
+    }
+}
 function setVisibleControl(formContext, controlName, state){
 	var ctrl = formContext.getControl(controlName);
 	if(ctrl){
