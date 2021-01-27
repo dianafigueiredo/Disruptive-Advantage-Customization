@@ -82,7 +82,37 @@ namespace WineryManagement
 
                 if (finalOccupation < 0)
                     throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] + " will not have that capacity, will exceeed in " + finalOccupation);
+
+                #region different actions
+                var VesselEntity = (EntityReference)jobDestination["dia_vessel"];
+                var vesselInfo = service.Retrieve("dia_vessel", VesselEntity.Id, new ColumnSet("dia_occupation", "dia_capacity", "dia_name", "dia_remainingcapacity"));
+                var vesselOccupation = vesselInfo.GetAttributeValue<decimal>("dia_occupation");
+
+                var JobEntity = (EntityReference)jobDestination["dia_job"];
+                var JobInfo = service.Retrieve(jobRef.LogicalName, JobEntity.Id, new ColumnSet("dia_schelduledstart", "dia_quantity", "dia_type"));
+                var jobtype = JobInfo.GetAttributeValue<OptionSetValue>("dia_type") != null ? JobInfo.GetAttributeValue<OptionSetValue>("dia_type") : null;
+
+
+                if (jobtype != null && jobtype.Value == 914440002) // if job type intake
+                {
+                    if (vesselOccupation != 0) {
+
+                        throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] +"is full");
+
+
+                    }
+                }
+
+               
+
+                #endregion
+
             }
+
         }
+
+
+
+
     }
 }

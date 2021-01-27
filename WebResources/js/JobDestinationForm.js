@@ -43,18 +43,15 @@ function formDestination(executionContext) {
         }
     };
     req.send();
-    console.log("3")
-    if (jobType == 914440000) {
-        console.log("4")
+ 
+    if (jobType == 914440000) { //in_situ
 
         formContext.ui.controls.get('dia_quantity').setVisible(false);
     }
 
     else {
-        console.log("5")
 
         formContext.ui.controls.get('dia_quantity').setVisible(true);
-
     }
 
 }
