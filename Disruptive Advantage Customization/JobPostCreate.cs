@@ -28,6 +28,8 @@ namespace Disruptive_Advantage_Customization
 
                     var batch = targetEntity.GetAttributeValue<EntityReference>("dia_batch");
 
+                    var occupation = targetEntity.GetAttributeValue<decimal>("dia_batch");
+
                     #region Update Vessel. Job type Intake
                     if (type.Value == 914440002 && vesselInfo != null)
                     {
@@ -89,6 +91,44 @@ namespace Disruptive_Advantage_Customization
 
                         }
                     }
+                    #endregion
+
+
+                    #region Completed Action 
+                    Entity jobDestination = (Entity)context.InputParameters["Target"];
+                    var jobRef = (EntityReference)jobDestination["dia_job"];
+
+                   
+                    var Vessel = service.Retrieve("dia_vessel", vesselInfo.Id, new ColumnSet("dia_occupation", "dia_capacity", "dia_name", "dia_remainingcapacity"));
+                
+
+                    var JobEntity = (EntityReference)jobDestination["dia_job"];
+                    var JobInfo = service.Retrieve(jobRef.LogicalName, JobEntity.Id, new ColumnSet("statuscode", "dia_quantity", "dia_type"));
+                    var jobtype = JobInfo.GetAttributeValue<OptionSetValue>("dia_type") != null ? JobInfo.GetAttributeValue<OptionSetValue>("dia_type") : null;
+                    var jobstatuscode = JobInfo.GetAttributeValue<OptionSetValue>("statuscode") != null ? JobInfo.GetAttributeValue<OptionSetValue>("statuscode") : null;
+                    var jobquantity = JobInfo.GetAttributeValue<OptionSetValue>("dia_quantity") != null ? JobInfo.GetAttributeValue<OptionSetValue>("dia_quantity") : null;
+
+                    var BatchEntity = targetEntity.GetAttributeValue<EntityReference>("dia_batch");
+                    var BatchInfo = service.Retrieve(BatchEntity.LogicalName, BatchEntity.Id, new ColumnSet("dia_batchcomposition", "dia_quantity", "dia_type"));
+                   
+                   
+
+
+
+                    if (jobtype != null && jobtype.Value == 914440002 && jobstatuscode.Value == 914440000) {
+
+                        var VesselUpdate = new Entity(vesselInfo.LogicalName);
+                        VesselUpdate.Id = vesselInfo.Id;
+                        VesselUpdate.Attributes["dia_occupation"] = occupation;
+                        VesselUpdate.Attributes["dia_batch"] = occupation;
+                        VesselUpdate.Attributes["dia_batchcomposition"] = BatchInfo.GetAttributeValue<EntityReference>("dia_batchcomposition");
+
+                        service.Update(VesselUpdate);
+
+
+
+                    }
+
                     #endregion
 
 

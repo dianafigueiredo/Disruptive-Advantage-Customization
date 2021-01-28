@@ -70,8 +70,8 @@ namespace WineryManagement
                 #endregion JobsToEmpty
 
                 var vesselEnt = service.Retrieve("dia_vessel", destVessel.Id, new ColumnSet("dia_occupation", "dia_capacity", "dia_name"));
-                var occVessel = (decimal)vesselEnt["dia_occupation"];
-                var capVessel = (decimal)vesselEnt["dia_capacity"];
+                var occVessel = vesselEnt.GetAttributeValue<decimal>("dia_occupation");
+                var capVessel = vesselEnt.GetAttributeValue<decimal>("dia_capacity");
                 var qtdJobDestVessel = (decimal)jobDestination["dia_quantity"];
 
 
@@ -103,7 +103,17 @@ namespace WineryManagement
                     }
                 }
 
-               
+                if (jobtype != null && jobtype.Value == 914440000 || jobtype.Value == 914440003) { //if job type in-situ or dispatch +
+
+
+                    if(vesselOccupation == 0) {
+
+                        throw new InvalidPluginExecutionException("The vessel" + vesselEnt["dia_name"] + " is empty");
+
+                    }
+                
+                }
+
 
                 #endregion
 

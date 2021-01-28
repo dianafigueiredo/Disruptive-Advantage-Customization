@@ -30,7 +30,7 @@ namespace Disruptive_Advantage_Customization
                             var jobInformation = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_batch"));
                             var batchComposition = jobInformation != null ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_batch").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_batch").Id, new ColumnSet("dia_batchcomposition")) : null;
                             //Quando o job é completed vamos buscar todos os job destination vessel. Nesse vessel depois são atualizados os campos occupation, batch e composition. 
-                            
+
                             #region Update Destination Vessel Quantity and Composition
                             var queryJobDestinationVessel = new QueryExpression("dia_jobdestinationvessel");
                             queryJobDestinationVessel.ColumnSet.AddColumns("dia_jobdestinationvesselid", "dia_vessel", "dia_quantity");
@@ -42,7 +42,7 @@ namespace Disruptive_Advantage_Customization
                             {
                                 if (destinationVessel.GetAttributeValue<EntityReference>("dia_vessel") != null)
                                 {
-                                    var vesselInformation = service.Retrieve(destinationVessel.GetAttributeValue<EntityReference>("dia_vessel").LogicalName, destinationVessel.GetAttributeValue<EntityReference>("dia_vessel").Id, new ColumnSet("dia_occupation", "dia_composition"));
+                                    var vesselInformation = service.Retrieve(destinationVessel.GetAttributeValue<EntityReference>("dia_vessel").LogicalName, destinationVessel.GetAttributeValue<EntityReference>("dia_vessel").Id, new ColumnSet("dia_occupation", "dia_composition", "dia_location", "dia_stage"));
 
                                     var sourceVesselUpdate = new Entity(vesselInformation.LogicalName);
                                     sourceVesselUpdate.Id = vesselInformation.Id;
@@ -51,6 +51,19 @@ namespace Disruptive_Advantage_Customization
                                     sourceVesselUpdate.Attributes["dia_composition"] = batchComposition != null ? batchComposition.GetAttributeValue<EntityReference>("dia_batchcomposition") : null; //Composition que vem do batch
 
                                     service.Update(sourceVesselUpdate);
+
+                                    #region Create Transaction
+                                    var createTransaction = new Entity("dia_vesselstocktransactions");
+                                    createTransaction.Attributes["dia_location"] = vesselInformation.Contains("dia_location") == true ? vesselInformation.GetAttributeValue<EntityReference>("dia_location") : null;
+                                    createTransaction.Attributes["dia_batch"] = jobInformation != null ? jobInformation.GetAttributeValue<EntityReference>("dia_batch") : null;
+                                    createTransaction.Attributes["dia_vessel"] = destinationVessel.GetAttributeValue<EntityReference>("dia_vessel");
+                                    createTransaction.Attributes["dia_stage"] = vesselInformation.Contains("dia_stage") == true ? vesselInformation.GetAttributeValue<EntityReference>("dia_stage") : null;
+                                    createTransaction.Attributes["dia_quantity"] = destinationVessel.GetAttributeValue<decimal>("dia_quantity");
+                                    createTransaction.Attributes["dia_referencetype"] = new OptionSetValue(914440000);
+
+                                    service.Create(createTransaction);
+
+                                    #endregion
                                 }
                                 //update statuscode job destination vessel para completed
                                 var vesselUpdate = new Entity(destinationVessel.LogicalName);
