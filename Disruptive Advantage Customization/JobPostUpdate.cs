@@ -167,8 +167,56 @@ namespace Disruptive_Advantage_Customization
                                 #endregion
                             }
                             #endregion
+                            #endregion
                         }
-                        #endregion
+                        if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440003)//dispatch
+                        {
+                            var jobInformation = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_batch"));
+                            var batchComposition = jobInformation != null ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_batch").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_batch").Id, new ColumnSet("dia_batchcomposition")) : null;
+                            #region Update Source Vessel
+
+                            var querySourceVessel = new QueryExpression("dia_jobsourcevessel");
+                            querySourceVessel.ColumnSet.AddColumns("dia_jobsourcevesselid", "dia_vessel", "dia_quantity");
+                            querySourceVessel.Criteria.AddCondition("dia_job", ConditionOperator.Equal, targetEntity.Id);
+
+                            EntityCollection resultsSourceVessel = service.RetrieveMultiple(querySourceVessel);
+
+                            foreach (var sourceVessel in resultsSourceVessel.Entities)
+                            {
+                                if (sourceVessel.GetAttributeValue<EntityReference>("dia_vessel") != null)
+                                {
+                                    var vesselInformation = service.Retrieve(sourceVessel.GetAttributeValue<EntityReference>("dia_vessel").LogicalName, sourceVessel.GetAttributeValue<EntityReference>("dia_vessel").Id, new ColumnSet("dia_occupation", "dia_composition", "dia_location", "dia_stage"));
+
+                                    var sourceVesselUpdate = new Entity(vesselInformation.LogicalName);
+                                    sourceVesselUpdate.Id = vesselInformation.Id;
+                                    sourceVesselUpdate.Attributes["dia_occupation"] = vesselInformation.GetAttributeValue<decimal>("dia_occupation") - sourceVessel.GetAttributeValue<decimal>("dia_quantity");
+                                    //se o vessel ficar vazio eliminar lookup para batch e composition
+                                    if (vesselInformation.GetAttributeValue<decimal>("dia_occupation") - sourceVessel.GetAttributeValue<decimal>("dia_quantity") == 0)
+                                    {
+                                        sourceVesselUpdate.Attributes["dia_batch"] = null;
+                                        sourceVesselUpdate.Attributes["dia_composition"] = null;
+                                    }
+                                    service.Update(sourceVesselUpdate);
+
+                                    #region Create Source Vessel Transaction
+
+                                    var createTransaction = new Entity("dia_vesselstocktransactions");
+                                    createTransaction.Attributes["dia_location"] = vesselInformation.Contains("dia_location") == true ? vesselInformation.GetAttributeValue<EntityReference>("dia_location") : null;
+                                    createTransaction.Attributes["dia_batch"] = jobInformation != null ? jobInformation.GetAttributeValue<EntityReference>("dia_batch") : null;
+                                    createTransaction.Attributes["dia_vessel"] = sourceVessel.GetAttributeValue<EntityReference>("dia_vessel");
+                                    createTransaction.Attributes["dia_stage"] = vesselInformation.Contains("dia_stage") == true ? vesselInformation.GetAttributeValue<EntityReference>("dia_stage") : null;
+                                    createTransaction.Attributes["dia_quantity"] = sourceVessel.GetAttributeValue<decimal>("dia_quantity") * -1;
+                                    createTransaction.Attributes["dia_reference"] = "Dispatch";
+                                    createTransaction.Attributes["dia_referencetype"] = new OptionSetValue(914440000);
+
+                                    service.Create(createTransaction);
+
+                                    #endregion
+
+                                    #endregion
+                                }
+                            }
+                        }
                     }
                 }
             }
