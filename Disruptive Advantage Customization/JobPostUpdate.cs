@@ -28,7 +28,7 @@ namespace Disruptive_Advantage_Customization
                             var statuscode = targetEntity.GetAttributeValue<OptionSetValue>("statuscode");
                             var quantity = targetEntity.GetAttributeValue<decimal?>("dia_quantity") == null ? 0 : targetEntity.GetAttributeValue<decimal>("dia_quantity");
                             var jobInformation = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_batch"));
-                            var batchComposition = jobInformation != null ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_batch").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_batch").Id, new ColumnSet("dia_batchcomposition")) : null;
+                            var batchComposition = jobInformation != null && jobInformation.Contains("dia_batch") ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_batch").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_batch").Id, new ColumnSet("dia_batchcomposition")) : null;
                             //Quando o job é completed vamos buscar todos os job destination vessel. Nesse vessel depois são atualizados os campos occupation, batch e composition. 
 
                             #region Update Destination Vessel Quantity and Composition
@@ -77,7 +77,7 @@ namespace Disruptive_Advantage_Customization
                         if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440001)//transfer
                         {
                             var jobInformation = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_batch"));
-                            var batchComposition = jobInformation != null ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_batch").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_batch").Id, new ColumnSet("dia_batchcomposition")) : null;
+                            var batchComposition = jobInformation != null && jobInformation.Contains("dia_batch") ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_batch").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_batch").Id, new ColumnSet("dia_batchcomposition")) : null;
                             //Quando o job fica completed passar o conteúdo do source vessel para o destination vessel. Ainda não está implementado destination vessel, só no source.
                             #region Update Source Vessel Quantity and Composition
 
@@ -172,7 +172,7 @@ namespace Disruptive_Advantage_Customization
                         if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440003)//dispatch
                         {
                             var jobInformation = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_batch"));
-                            var batchComposition = jobInformation != null ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_batch").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_batch").Id, new ColumnSet("dia_batchcomposition")) : null;
+                            var batchComposition = jobInformation != null && jobInformation.Contains("dia_batch") ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_batch").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_batch").Id, new ColumnSet("dia_batchcomposition")) : null;
                             #region Update Source Vessel
 
                             var querySourceVessel = new QueryExpression("dia_jobsourcevessel");
@@ -216,6 +216,42 @@ namespace Disruptive_Advantage_Customization
                                     #endregion
                                 }
                             }
+                        }
+                        if(jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440000)// in-situ
+                        {
+                            tracingService.Trace("In-situ");
+                            var jobInformation = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_batch"));
+                            var batchComposition = jobInformation != null && jobInformation.Contains("dia_batch") ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_batch").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_batch").Id, new ColumnSet("dia_batchcomposition")) : null;
+
+                            #region Update Destination Vessel Additives
+
+                            var queryJobDestinationVessel = new QueryExpression("dia_jobdestinationvessel");
+                            queryJobDestinationVessel.ColumnSet.AddColumns("dia_jobdestinationvesselid", "dia_quantity", "dia_vessel");
+                            queryJobDestinationVessel.Criteria.AddCondition("dia_job", ConditionOperator.Equal, targetEntity.Id);
+
+                            EntityCollection resultsQueryJobDestinationVessel = service.RetrieveMultiple(queryJobDestinationVessel);
+
+                            foreach (var jobDestinationVessel in resultsQueryJobDestinationVessel.Entities)
+                            {
+                                tracingService.Trace("destinations");
+                                var queryJobAdditive = new QueryExpression("dia_jobadditive");
+                                queryJobAdditive.ColumnSet.AddColumns("dia_jobadditiveid");
+                                queryJobAdditive.Criteria.AddCondition("dia_jobid", ConditionOperator.Equal, targetEntity.Id);
+
+                                EntityCollection queryJobAdditiveResults = service.RetrieveMultiple(queryJobAdditive);
+
+                                foreach (var jobAdditive in queryJobAdditiveResults.Entities)
+                                {
+                                    var jobAdditiveUpdate = new Entity(jobAdditive.LogicalName);
+                                    jobAdditiveUpdate.Id = jobAdditive.Id;
+                                    tracingService.Trace("1:" + jobDestinationVessel.Contains("dia_vessel"));
+                                    jobAdditiveUpdate.Attributes["dia_vessel"] = jobDestinationVessel.Contains("dia_vessel") == true ? jobDestinationVessel.GetAttributeValue<EntityReference>("dia_vessel") : null;
+
+                                    service.Update(jobAdditiveUpdate);
+                                }
+                            }
+
+                            #endregion
                         }
                     }
                 }
