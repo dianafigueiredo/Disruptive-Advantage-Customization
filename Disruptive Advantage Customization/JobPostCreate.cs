@@ -72,7 +72,7 @@ namespace Disruptive_Advantage_Customization
                         if(vesselInfo != null)
                         {
                             var name= targetEntity.GetAttributeValue<string>("dia_name");
-                            var occupation = targetEntity.GetAttributeValue<decimal>("dia_occupation");
+                            //var occupation = targetEntity.GetAttributeValue<decimal>("dia_occupation");
                             var location = targetEntity.GetAttributeValue<EntityReference>("dia_location");
                             var batchVessel = targetEntity.GetAttributeValue<EntityReference>("dia_batch");
                             var compositionVessel = targetEntity.GetAttributeValue<EntityReference>("dia_batchcomposition");
@@ -81,7 +81,7 @@ namespace Disruptive_Advantage_Customization
                             var createVessel = new Entity("dia_vessel");
 
                             createVessel.Attributes["dia_name"] = name;
-                            createVessel.Attributes["dia_occupation"] = occupation;
+                            //createVessel.Attributes["dia_occupation"] = occupation;
                             createVessel.Attributes["dia_location"] = location;
                             createVessel.Attributes["dia_batch"] = batchVessel;
                             createVessel.Attributes["dia_batchcomposition"] = compositionVessel;
