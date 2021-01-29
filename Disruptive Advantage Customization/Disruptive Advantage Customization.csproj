@@ -64,9 +64,7 @@
     <Compile Include="BusinessLogicHelper\Logic.cs" />
     <Compile Include="BusinessLogicHelper\LogicHelper.cs" />
     <Compile Include="JobDestinationVesselPreCreate.cs" />
-    <Compile Include="JobPostCreate.cs" />
     <Compile Include="JobPostUpdate.cs" />
-    <Compile Include="JobPreCreate.cs" />
     <Compile Include="JobSourceVesselPostCreate.cs" />
     <Compile Include="JobSourceVesselPostUpdate.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
