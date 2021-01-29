@@ -10,6 +10,10 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
     public class Logic
     {
         public void LogicToCreateSomehting(IOrganizationService service)
-        { }
+        { 
+        
+
+        
+        }
     }
 }

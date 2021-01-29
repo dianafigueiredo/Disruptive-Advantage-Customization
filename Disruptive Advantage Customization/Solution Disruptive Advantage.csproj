@@ -63,6 +63,7 @@
   <ItemGroup>
     <Compile Include="BusinessLogicHelper\Logic.cs" />
     <Compile Include="BusinessLogicHelper\LogicHelper.cs" />
+    <Compile Include="Entities\JobDestinationEntity.cs" />
     <Compile Include="JobDestinationVesselPreCreate.cs" />
     <Compile Include="JobPostUpdate.cs" />
     <Compile Include="JobSourceVesselPostCreate.cs" />
@@ -73,5 +74,6 @@
     <None Include="key.snk" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
