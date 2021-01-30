@@ -87,14 +87,20 @@ namespace WineryManagement
                 var VesselEntity = (EntityReference)jobDestination["dia_vessel"];
                 var vesselInfo = service.Retrieve("dia_vessel", VesselEntity.Id, new ColumnSet("dia_occupation", "dia_capacity", "dia_name", "dia_remainingcapacity"));
                 var vesselOccupation = vesselInfo.GetAttributeValue<decimal>("dia_occupation");
-
+                var vesselCapacity = vesselInfo.GetAttributeValue<decimal>("dia_capacity");
+                tracingService.Trace("ocupação: " + vesselOccupation);
                 var JobEntity = (EntityReference)jobDestination["dia_job"];
                 var JobInfo = service.Retrieve(jobRef.LogicalName, JobEntity.Id, new ColumnSet("dia_schelduledstart", "dia_quantity", "dia_type"));
                 var jobtype = JobInfo.GetAttributeValue<OptionSetValue>("dia_type") != null ? JobInfo.GetAttributeValue<OptionSetValue>("dia_type") : null;
 
+                tracingService.Trace("job type: " + jobtype.Value);
 
                 if (jobtype != null && jobtype.Value == 914440002) // if job type intake
                 {
+                    if(jobDestination.GetAttributeValue<decimal>("dia_quantity") > vesselCapacity)
+                    {
+                        throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " does not have enough capacity. Max. Capacity: " + Decimal.ToInt32(vesselCapacity) + "L");
+                    }
                     if (vesselOccupation != 0) {
 
                         throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] +"is full");
