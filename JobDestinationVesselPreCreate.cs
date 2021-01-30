@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Disruptive_Advantage_Customization.Entities;
 
 namespace WineryManagement
 {
@@ -38,10 +37,25 @@ namespace WineryManagement
                 //Exemplo: todas as regions que defeniram devem ser uma função dentro da class enumerada anteriormente
 
                 Entity jobDestination = (Entity)context.InputParameters["Target"];
+                var destVessel = (EntityReference)jobDestination["dia_vessel"];
+                //var qtdDestination = (decimal)jobDestination.Attribute["dia_quantity"] ou assim ou com o getAttributeValue não várias maneiras no mesmo codigo;
+                var qtdDestination = (decimal)jobDestination["dia_quantity"];
+                var jobRef = (EntityReference)jobDestination["dia_job"];
+                var jobEnt = service.Retrieve(jobRef.LogicalName, jobRef.Id, new ColumnSet("dia_schelduledstart", "dia_quantity", "dia_type"));
 
                 #region JobsToFill
-                var JobDestinationLogic = new JobDestinationEntity();
-                var vesselFills = JobDestinationLogic.GetVesselQuantity(service, jobDestination);
+                var queryJobDestinations = new QueryExpression("dia_jobdestinationvessel");
+                queryJobDestinations.ColumnSet = new ColumnSet("dia_vessel", "dia_quantity");
+                queryJobDestinations.Criteria = new FilterExpression(LogicalOperator.And);
+                queryJobDestinations.Criteria.AddCondition("dia_vessel", ConditionOperator.Equal, destVessel.Id);
+
+                var jobLinkEntityDest = new LinkEntity("dia_jobdestinationvessel", "dia_job", "dia_job", "dia_jobid", JoinOperator.Inner);
+                jobLinkEntityDest.Columns = new ColumnSet(false);
+                jobLinkEntityDest.LinkCriteria = new FilterExpression(LogicalOperator.And);
+                jobLinkEntityDest.LinkCriteria.AddCondition("dia_schelduledstart", ConditionOperator.LessEqual, (DateTime)jobEnt["dia_schelduledstart"]);
+                jobLinkEntityDest.LinkCriteria.AddCondition("statuscode", ConditionOperator.Equal, 914440001);//Addicionem comentários o name deste valor é qual? nínguem vai saber
+                queryJobDestinations.LinkEntities.Add(jobLinkEntityDest);
+                var vesselFills = service.RetrieveMultiple(queryJobDestinations);
 
                 //TODO:
                 //deveria ser outra função simples de ser usada em muitos locais como por exemplo 
@@ -93,20 +107,14 @@ namespace WineryManagement
                 var VesselEntity = (EntityReference)jobDestination["dia_vessel"];
                 var vesselInfo = service.Retrieve("dia_vessel", VesselEntity.Id, new ColumnSet("dia_occupation", "dia_capacity", "dia_name", "dia_remainingcapacity"));
                 var vesselOccupation = vesselInfo.GetAttributeValue<decimal>("dia_occupation");
-                var vesselCapacity = vesselInfo.GetAttributeValue<decimal>("dia_capacity");
-                tracingService.Trace("ocupação: " + vesselOccupation);
+
                 var JobEntity = (EntityReference)jobDestination["dia_job"];
                 var JobInfo = service.Retrieve(jobRef.LogicalName, JobEntity.Id, new ColumnSet("dia_schelduledstart", "dia_quantity", "dia_type"));
                 var jobtype = JobInfo.GetAttributeValue<OptionSetValue>("dia_type") != null ? JobInfo.GetAttributeValue<OptionSetValue>("dia_type") : null;
 
-                tracingService.Trace("job type: " + jobtype.Value);
 
                 if (jobtype != null && jobtype.Value == 914440002) // if job type intake
                 {
-                    if(jobDestination.GetAttributeValue<decimal>("dia_quantity") > vesselCapacity)
-                    {
-                        throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " does not have enough capacity. Max. Capacity: " + Decimal.ToInt32(vesselCapacity) + "L");
-                    }
                     if (vesselOccupation != 0) {
 
                         throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] +"is full");

@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Disruptive Advantage Customization", "Disruptive Advantage Customization\Disruptive Advantage Customization.csproj", "{6A72E34F-80B9-4B45-946A-A96B0637EEB5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Solution Disruptive Advantage", "Disruptive Advantage Customization\Solution Disruptive Advantage.csproj", "{6A72E34F-80B9-4B45-946A-A96B0637EEB5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebResources", "WebResources\WebResources.csproj", "{E260AE68-BFCB-42A7-8271-A731122A8DE6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebResources", "WebResources\WebResources.csproj", "{E260AE68-BFCB-42A7-8271-A731122A8DE6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
