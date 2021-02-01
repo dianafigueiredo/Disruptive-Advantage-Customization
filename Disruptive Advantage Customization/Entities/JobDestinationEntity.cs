@@ -10,15 +10,8 @@ namespace Disruptive_Advantage_Customization.Entities
 {
     public class JobDestinationEntity
     {
-        public EntityCollection GetVesselQuantity(IOrganizationService service, Entity jobDestination)
+        public EntityCollection GetDestinationVesselQuantity(IOrganizationService service, Entity jobDestination, EntityReference destVessel, Entity jobEnt)
         {
-            
-            var destVessel = (EntityReference)jobDestination["dia_vessel"];
-            //var qtdDestination = (decimal)jobDestination.Attribute["dia_quantity"] ou assim ou com o getAttributeValue não várias maneiras no mesmo codigo;
-            var qtdDestination = (decimal)jobDestination["dia_quantity"];
-            var jobRef = (EntityReference)jobDestination["dia_job"];
-            var jobEnt = service.Retrieve(jobRef.LogicalName, jobRef.Id, new ColumnSet("dia_schelduledstart", "dia_quantity", "dia_type"));
-
             var queryJobDestinations = new QueryExpression("dia_jobdestinationvessel");
             queryJobDestinations.ColumnSet = new ColumnSet("dia_vessel", "dia_quantity");
             queryJobDestinations.Criteria = new FilterExpression(LogicalOperator.And);
@@ -30,14 +23,31 @@ namespace Disruptive_Advantage_Customization.Entities
             jobLinkEntityDest.LinkCriteria.AddCondition("dia_schelduledstart", ConditionOperator.LessEqual, (DateTime)jobEnt["dia_schelduledstart"]);
             jobLinkEntityDest.LinkCriteria.AddCondition("statuscode", ConditionOperator.Equal, 914440001);//Completed
             queryJobDestinations.LinkEntities.Add(jobLinkEntityDest);
+
             var vesselFills = service.RetrieveMultiple(queryJobDestinations);
 
             return vesselFills;
+        }
+        public EntityCollection GetSourceVesselQuantity(IOrganizationService service, Entity jobDestination, EntityReference destVessel, Entity jobEnt)
+        {
+            var queryJobSource = new QueryExpression("dia_jobsourcevessel");
+            queryJobSource.ColumnSet = new ColumnSet("dia_quantity");
+            queryJobSource.Criteria = new FilterExpression(LogicalOperator.And);
+            queryJobSource.Criteria.AddCondition("dia_vessel", ConditionOperator.Equal, destVessel.Id);
 
-            
+            var jobLinkEntitySource = new LinkEntity("dia_jobdestinationvessel", "dia_job", "dia_job", "dia_jobid", JoinOperator.Inner);
+            jobLinkEntitySource.Columns = new ColumnSet(false);
+            jobLinkEntitySource.LinkCriteria = new FilterExpression(LogicalOperator.And);
+            jobLinkEntitySource.LinkCriteria.AddCondition("dia_schelduledstart", ConditionOperator.LessEqual, (DateTime)jobEnt["dia_schelduledstart"]);
+            jobLinkEntitySource.LinkCriteria.AddCondition("statuscode", ConditionOperator.Equal, 914440001);
+            queryJobSource.LinkEntities.Add(jobLinkEntitySource);
+
+            var vesselEmpty = service.RetrieveMultiple(queryJobSource);
+
+            return vesselEmpty;
         }
 
-       
+
 
 
 

@@ -22,119 +22,13 @@ namespace WineryManagement
 
             try
             {
-                var logicToBeUsexecuted = new Logic();
-                logicToBeUsexecuted.LogicToCreateSomehting(service);
+                var logic = new Logic();
+                logic.JobDestinationVesselPreCreateLogic(service, context, tracingService);
             }
             catch (Exception ex)
             {
-
                 throw new InvalidPluginExecutionException(String.Format("Error on Plugin xpto with message: {0}",ex.Message));
             }
-            //Validar se o context é diferente de null assim como os inputParameters
-            if (context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
-            {
-                //TODO:
-                //Dentro do método Execute não quero mais nda para além de um global try catch e depois criam toda a logica na paste BusinessLogicHelper dentro da class Logic
-                //Exemplo: todas as regions que defeniram devem ser uma função dentro da class enumerada anteriormente
-
-                Entity jobDestination = (Entity)context.InputParameters["Target"];
-
-                #region JobsToFill
-                var JobDestinationLogic = new JobDestinationEntity();
-                var vesselFills = JobDestinationLogic.GetVesselQuantity(service, jobDestination);
-
-                //TODO:
-                //deveria ser outra função simples de ser usada em muitos locais como por exemplo 
-                //var logiHelper = new LogicHelper();
-                //var value = logiHelper.SumOfQuantities(vesselFills, "dia_quantity"); 
-                var qtdFill = 0m;
-                foreach (var vessFill in vesselFills.Entities)
-                {
-                    qtdFill += (decimal)vessFill["dia_quantity"];
-                }
-                #endregion JobsToFill
-
-                #region JobsToEmpty
-                var queryJobSource = new QueryExpression("dia_jobsourcevessel");
-                queryJobSource.ColumnSet = new ColumnSet("dia_quantity");
-                queryJobSource.Criteria = new FilterExpression(LogicalOperator.And);
-                queryJobSource.Criteria.AddCondition("dia_vessel", ConditionOperator.Equal, destVessel.Id);
-
-                var jobLinkEntitySource = new LinkEntity("dia_jobdestinationvessel", "dia_job", "dia_job", "dia_jobid", JoinOperator.Inner);
-                jobLinkEntitySource.Columns = new ColumnSet(false);
-                jobLinkEntitySource.LinkCriteria = new FilterExpression(LogicalOperator.And);
-                jobLinkEntitySource.LinkCriteria.AddCondition("dia_schelduledstart", ConditionOperator.LessEqual, (DateTime)jobEnt["dia_schelduledstart"]);
-                jobLinkEntitySource.LinkCriteria.AddCondition("statuscode", ConditionOperator.Equal, 914440001);
-                queryJobSource.LinkEntities.Add(jobLinkEntitySource);
-                var vesselEmpty = service.RetrieveMultiple(queryJobSource);
-
-                var qtdDrop = 0m;
-                foreach (var vessEmpty in vesselEmpty.Entities)
-                {
-                    qtdDrop += (decimal)vessEmpty["dia_quantity"];
-                }
-                #endregion JobsToEmpty
-
-                var vesselEnt = service.Retrieve("dia_vessel", destVessel.Id, new ColumnSet("dia_occupation", "dia_capacity", "dia_name"));
-                var occVessel = vesselEnt.GetAttributeValue<decimal>("dia_occupation");
-                var capVessel = vesselEnt.GetAttributeValue<decimal>("dia_capacity");
-                var qtdJobDestVessel = (decimal)jobDestination["dia_quantity"];
-
-
-                var finalOccupation = capVessel - occVessel - qtdJobDestVessel - qtdFill + qtdDrop;
-
-
-                //throw new InvalidPluginExecutionException(" Final Occupation " + finalOccupation + " capJobDestVessel: " + capVessel + " occupation: " + occVessel + " qtdJobDestVessel " + qtdJobDestVessel + " qtdFill: " + qtdFill + " qtdDrop: " + qtdDrop);
-
-                if (finalOccupation < 0)
-                    throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] + " will not have that capacity, will exceeed in " + finalOccupation);
-
-                #region different actions
-                var VesselEntity = (EntityReference)jobDestination["dia_vessel"];
-                var vesselInfo = service.Retrieve("dia_vessel", VesselEntity.Id, new ColumnSet("dia_occupation", "dia_capacity", "dia_name", "dia_remainingcapacity"));
-                var vesselOccupation = vesselInfo.GetAttributeValue<decimal>("dia_occupation");
-                var vesselCapacity = vesselInfo.GetAttributeValue<decimal>("dia_capacity");
-                tracingService.Trace("ocupação: " + vesselOccupation);
-                var JobEntity = (EntityReference)jobDestination["dia_job"];
-                var JobInfo = service.Retrieve(jobRef.LogicalName, JobEntity.Id, new ColumnSet("dia_schelduledstart", "dia_quantity", "dia_type"));
-                var jobtype = JobInfo.GetAttributeValue<OptionSetValue>("dia_type") != null ? JobInfo.GetAttributeValue<OptionSetValue>("dia_type") : null;
-
-                tracingService.Trace("job type: " + jobtype.Value);
-
-                if (jobtype != null && jobtype.Value == 914440002) // if job type intake
-                {
-                    if(jobDestination.GetAttributeValue<decimal>("dia_quantity") > vesselCapacity)
-                    {
-                        throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " does not have enough capacity. Max. Capacity: " + Decimal.ToInt32(vesselCapacity) + "L");
-                    }
-                    if (vesselOccupation != 0) {
-
-                        throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] +"is full");
-
-
-                    }
-                }
-
-                if (jobtype != null && jobtype.Value == 914440000 || jobtype.Value == 914440003) { //if job type in-situ or dispatch +
-
-
-                    if(vesselOccupation == 0) {
-
-                        throw new InvalidPluginExecutionException("The vessel" + vesselEnt["dia_name"] + " is empty");
-
-                    }
-                
-                }
-
-
-                #endregion
-
-            }
-
         }
-
-
-
-
     }
 }
