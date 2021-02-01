@@ -217,7 +217,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                         var JobLogic = new JobEntity();
                         EntityCollection resultsQueryJobDestinationVessel = JobLogic.GetDestinationQuantity(service, targetEntity);
 
-                     
+
 
                         foreach (var jobdestinationvessel in resultsQueryJobDestinationVessel.Entities)
                         {
@@ -303,7 +303,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     }
                     if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440000)// in-situ
                     {
-                        tracingService.Trace("In-situ");
+
                         var jobInformation = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_batch"));
                         var batchComposition = jobInformation != null && jobInformation.Contains("dia_batch") ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_batch").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_batch").Id, new ColumnSet("dia_batchcomposition")) : null;
 
@@ -320,7 +320,6 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                             {
                                 var jobAdditiveUpdate = new Entity(jobAdditive.LogicalName);
                                 jobAdditiveUpdate.Id = jobAdditive.Id;
-                                tracingService.Trace("1:" + jobDestinationVessel.Contains("dia_vessel"));
                                 jobAdditiveUpdate.Attributes["dia_vessel"] = jobDestinationVessel.Contains("dia_vessel") == true ? jobDestinationVessel.GetAttributeValue<EntityReference>("dia_vessel") : null;
 
                                 service.Update(jobAdditiveUpdate);
@@ -330,8 +329,10 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                         #endregion
                     }
                 }
-            
+
             }
         }
+
+        
     }
 }
