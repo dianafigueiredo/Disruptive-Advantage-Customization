@@ -39,7 +39,7 @@ namespace Disruptive_Advantage_Customization.Entities
             jobLinkEntitySource.Columns = new ColumnSet(false);
             jobLinkEntitySource.LinkCriteria = new FilterExpression(LogicalOperator.And);
             jobLinkEntitySource.LinkCriteria.AddCondition("dia_schelduledstart", ConditionOperator.LessEqual, (DateTime)jobEnt["dia_schelduledstart"]);
-            jobLinkEntitySource.LinkCriteria.AddCondition("statuscode", ConditionOperator.Equal, 914440001);
+            jobLinkEntitySource.LinkCriteria.AddCondition("statuscode", ConditionOperator.Equal, 914440001);//Completed
             queryJobSource.LinkEntities.Add(jobLinkEntitySource);
 
             var vesselEmpty = service.RetrieveMultiple(queryJobSource);
