@@ -27,4 +27,3 @@ namespace Disruptive_Advantage_Customization
     }
 
 }
-

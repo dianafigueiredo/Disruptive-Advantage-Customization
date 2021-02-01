@@ -27,7 +27,7 @@ namespace WineryManagement
             }
             catch (Exception ex)
             {
-                throw new InvalidPluginExecutionException(String.Format("Error on Plugin xpto with message: {0}",ex.Message));
+                throw new InvalidPluginExecutionException(String.Format("Error on Plugin xpto with message: {0}", ex.Message));
             }
         }
     }
