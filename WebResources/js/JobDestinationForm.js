@@ -7,6 +7,7 @@ function formDestination(executionContext) {
 
     console.log("1");
     var formContext = executionContext.getFormContext();
+    if (formContext.getAttribute('dia_job').getValue() == null) return;
     var jobId = formContext.getAttribute('dia_job').getValue()[0].id;
     var jobType = 0;
     var fetchXml = [
@@ -43,15 +44,18 @@ function formDestination(executionContext) {
         }
     };
     req.send();
- 
-    if (jobType == 914440000) { //in_situ
+    console.log("3")
+    if (jobType == 914440000) {
+        console.log("4")
 
         formContext.ui.controls.get('dia_quantity').setVisible(false);
     }
 
     else {
+        console.log("5")
 
         formContext.ui.controls.get('dia_quantity').setVisible(true);
+
     }
 
 }

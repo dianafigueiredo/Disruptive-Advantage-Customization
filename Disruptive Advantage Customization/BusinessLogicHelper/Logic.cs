@@ -112,6 +112,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
             if (context != null && context.InputParameters != null && context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
             {
                 Entity targetEntity = (Entity)context.InputParameters["Target"];
+
                 #region update  job status reason = completed
                 if (targetEntity.Contains("statuscode") && targetEntity.GetAttributeValue<OptionSetValue>("statuscode").Value == 914440000)//Completed
                 {
@@ -242,8 +243,8 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                             createTransaction.Attributes["dia_referencetype"] = new OptionSetValue(914440000);//job
 
                             service.Create(createTransaction);
-
                             #endregion
+                            
                             #region jobdestinationvessel status code
                             var vesselUpdate = new Entity(jobdestinationvessel.LogicalName);
                             vesselUpdate.Id = jobdestinationvessel.Id;
@@ -259,6 +260,8 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     {
                         var jobInformation = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_batch"));
                         var batchComposition = jobInformation != null && jobInformation.Contains("dia_batch") ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_batch").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_batch").Id, new ColumnSet("dia_batchcomposition")) : null;
+                       
+                        
                         #region Update Source Vessel
 
                         var JobLogic = new JobEntity();
