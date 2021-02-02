@@ -24,5 +24,20 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
             }
             return result;
         }
+        /// <summary>
+        /// Function to calculate the final occupation of the vessel
+        /// </summary>
+        /// <param name="capVessel">EntityCollection</param>
+        /// <param name="occVessel">AttributName</param>
+        /// <param name="qtdJobDestVessel">AttributName</param>
+        /// <param name="qtdFill">AttributName</param>
+        /// <param name="qtdDrop">AttributName</param>
+        /// <returns>Final occupation</returns>
+        public decimal? FinalOccupation(decimal capVessel, decimal occVessel, decimal qtdJobDestVessel, decimal? qtdFill, decimal? qtdDrop)
+        {
+            var finalOccupation = capVessel - occVessel - qtdJobDestVessel - qtdFill + qtdDrop;
+
+            return finalOccupation;
+        }
     }
 }

@@ -12,9 +12,8 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
             if (context != null && context.InputParameters != null && context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
             {
                 Entity jobDestination = (Entity)context.InputParameters["Target"];
-                var destVessel = (EntityReference)jobDestination["dia_vessel"];
-                var qtdDestination = (decimal)jobDestination["dia_quantity"];
-                var jobRef = (EntityReference)jobDestination["dia_job"];
+                var destVessel = jobDestination.GetAttributeValue<EntityReference>("dia_vessel");
+                var jobRef = jobDestination.GetAttributeValue<EntityReference>("dia_job");
                 var jobEnt = service.Retrieve(jobRef.LogicalName, jobRef.Id, new ColumnSet("dia_schelduledstart", "dia_quantity", "dia_type"));
 
                 #region JobsToFill
@@ -37,22 +36,22 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                 var vesselEnt = service.Retrieve("dia_vessel", destVessel.Id, new ColumnSet("dia_occupation", "dia_capacity", "dia_name"));
                 var occVessel = vesselEnt.GetAttributeValue<decimal>("dia_occupation");
                 var capVessel = vesselEnt.GetAttributeValue<decimal>("dia_capacity");
-                var qtdJobDestVessel = (decimal)jobDestination["dia_quantity"];
+                var qtdJobDestVessel = jobDestination.GetAttributeValue<decimal>("dia_quantity");
 
 
-                var finalOccupation = capVessel - occVessel - qtdJobDestVessel - qtdFill + qtdDrop;
+                var finalOccupation = logiHelper.FinalOccupation(capVessel, occVessel, qtdJobDestVessel, qtdFill, qtdDrop);
 
                 if (finalOccupation < 0)
                     throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] + " will not have that capacity, will exceeed in " + finalOccupation);
 
                 #region different actions
 
-                var VesselEntity = (EntityReference)jobDestination["dia_vessel"];
+                var VesselEntity = jobDestination.GetAttributeValue<EntityReference>("dia_vessel");
                 var vesselInfo = service.Retrieve("dia_vessel", VesselEntity.Id, new ColumnSet("dia_occupation", "dia_capacity", "dia_name", "dia_remainingcapacity"));
                 var vesselOccupation = vesselInfo.GetAttributeValue<decimal>("dia_occupation");
                 var vesselCapacity = vesselInfo.GetAttributeValue<decimal>("dia_capacity");
 
-                var JobEntity = (EntityReference)jobDestination["dia_job"];
+                var JobEntity = jobDestination.GetAttributeValue<EntityReference>("dia_job");
                 var JobInfo = service.Retrieve(jobRef.LogicalName, JobEntity.Id, new ColumnSet("dia_schelduledstart", "dia_quantity", "dia_type"));
                 var jobtype = JobInfo.GetAttributeValue<OptionSetValue>("dia_type") != null ? JobInfo.GetAttributeValue<OptionSetValue>("dia_type") : null;
 
@@ -70,7 +69,6 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
                 if (jobtype != null && jobtype.Value == 914440000 || jobtype.Value == 914440003)
                 { //if job type in-situ or dispatch +
-
                     if (vesselOccupation == 0)
                     {
                         throw new InvalidPluginExecutionException("The vessel" + vesselEnt["dia_name"] + " is empty");
@@ -114,7 +112,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                 Entity targetEntity = (Entity)context.InputParameters["Target"];
 
                 #region update  job status reason = completed
-                if (targetEntity.Contains("statuscode") && targetEntity.GetAttributeValue<OptionSetValue>("statuscode").Value == 914440000)//Completed
+                if (targetEntity.Contains("statuscode") && targetEntity.GetAttributeValue<OptionSetValue>("statuscode").Value == 914440005)//Completed
                 {
                     var jobType = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_type"));
                     if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440002)//intake
