@@ -130,12 +130,15 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                             if (destinationVessel.GetAttributeValue<EntityReference>("dia_vessel") != null)
                             {
                                 var vesselInformation = service.Retrieve(destinationVessel.GetAttributeValue<EntityReference>("dia_vessel").LogicalName, destinationVessel.GetAttributeValue<EntityReference>("dia_vessel").Id, new ColumnSet("dia_occupation", "dia_composition", "dia_location", "dia_stage"));
+                                var stage = destinationVessel.GetAttributeValue<AliasedValue>("stage.dia_stage") == null ? null : (EntityReference)destinationVessel.GetAttributeValue<AliasedValue>("stage.dia_stage").Value;
 
                                 var sourceVesselUpdate = new Entity(vesselInformation.LogicalName);
                                 sourceVesselUpdate.Id = vesselInformation.Id;
                                 sourceVesselUpdate.Attributes["dia_occupation"] = vesselInformation.GetAttributeValue<decimal>("dia_occupation") + destinationVessel.GetAttributeValue<decimal>("dia_quantity"); // ocupação do vessel + quantity do job destination vessel.
                                 sourceVesselUpdate.Attributes["dia_batch"] = jobInformation != null ? jobInformation.GetAttributeValue<EntityReference>("dia_batch") : null;
-                                sourceVesselUpdate.Attributes["dia_composition"] = batchComposition != null ? batchComposition.GetAttributeValue<EntityReference>("dia_batchcomposition") : null; //Composition que vem do batch
+                                sourceVesselUpdate.Attributes["dia_composition"] = batchComposition != null ? batchComposition.GetAttributeValue<EntityReference>("dia_batchcomposition") : null; //Composition que vem do batch     
+                                sourceVesselUpdate.Attributes["dia_stage"] = stage;
+
 
                                 service.Update(sourceVesselUpdate);
 
@@ -221,12 +224,13 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                         foreach (var jobdestinationvessel in resultsQueryJobDestinationVessel.Entities)
                         {
                             var vesselInformation = service.Retrieve(jobdestinationvessel.GetAttributeValue<EntityReference>("dia_vessel").LogicalName, jobdestinationvessel.GetAttributeValue<EntityReference>("dia_vessel").Id, new ColumnSet("dia_occupation", "dia_composition", "dia_location", "dia_stage"));
-
+                            var stage = jobdestinationvessel.GetAttributeValue<AliasedValue>("stage.dia_stage") == null ? null : (EntityReference)jobdestinationvessel.GetAttributeValue<AliasedValue>("stage.dia_stage").Value;
                             var destinationVesselUpdate = new Entity(vesselInformation.LogicalName);
                             destinationVesselUpdate.Id = vesselInformation.Id;
                             destinationVesselUpdate.Attributes["dia_occupation"] = jobdestinationvessel.GetAttributeValue<decimal>("dia_quantity") + vesselInformation.GetAttributeValue<decimal>("dia_occupation");
                             destinationVesselUpdate.Attributes["dia_batch"] = jobInformation != null ? jobInformation.GetAttributeValue<EntityReference>("dia_batch") : null;
                             destinationVesselUpdate.Attributes["dia_composition"] = batchComposition != null ? batchComposition.GetAttributeValue<EntityReference>("dia_batchcomposition") : null;
+                            destinationVesselUpdate.Attributes["dia_stage"] = stage;
 
                             service.Update(destinationVesselUpdate);
 
@@ -242,7 +246,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
                             service.Create(createTransaction);
                             #endregion
-                            
+
                             #region jobdestinationvessel status code
                             var vesselUpdate = new Entity(jobdestinationvessel.LogicalName);
                             vesselUpdate.Id = jobdestinationvessel.Id;
@@ -258,8 +262,8 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     {
                         var jobInformation = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_batch"));
                         var batchComposition = jobInformation != null && jobInformation.Contains("dia_batch") ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_batch").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_batch").Id, new ColumnSet("dia_batchcomposition")) : null;
-                       
-                        
+
+
                         #region Update Source Vessel
 
                         var JobLogic = new JobEntity();
@@ -334,6 +338,39 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
             }
         }
 
-        
+        public void BatchPostUpdate(IOrganizationService service, IPluginExecutionContext context, ITracingService tracingService)
+        {
+
+            Entity BatchEntity = (Entity)context.InputParameters["Target"];
+
+            if (BatchEntity.Contains("statuscode") && BatchEntity.GetAttributeValue<OptionSetValue>("statuscode") != null)
+            {
+                var Batch = BatchEntity.GetAttributeValue<EntityReference>("dia_batch");
+                var statuscodebatch = BatchEntity.GetAttributeValue<OptionSetValue>("statuscode");
+                var statecodebatch = BatchEntity.GetAttributeValue<OptionSetValue>("statecode");
+
+                if (statuscodebatch != null && statuscodebatch.Value == 914440003)
+                { //Active 
+                    var BatchStateCodeUpdate = new Entity(BatchEntity.LogicalName);
+                    BatchStateCodeUpdate.Id = BatchEntity.Id;
+                    BatchStateCodeUpdate.Attributes["statecode"] = new OptionSetValue(0);//Active
+                    service.Update(BatchStateCodeUpdate);
+
+                }
+                else if (statuscodebatch != null && statuscodebatch.Value == 914440004)//Inactive
+                {
+                    var BatchStateCodeUpdate = new Entity(BatchEntity.LogicalName);
+                    BatchStateCodeUpdate.Id = BatchEntity.Id;
+                    BatchStateCodeUpdate.Attributes["statecode"] = new OptionSetValue(1); //Inactive
+                    service.Update(BatchStateCodeUpdate);
+
+                }
+            }
+
+
+
+        }
+
+
     }
 }

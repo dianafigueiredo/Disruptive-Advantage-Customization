@@ -1,10 +1,14 @@
-﻿using Disruptive_Advantage_Customization.BusinessLogicHelper;
-using Microsoft.Xrm.Sdk;
+﻿using Microsoft.Xrm.Sdk;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Disruptive_Advantage_Customization.BusinessLogicHelper;
 
 namespace Disruptive_Advantage_Customization
 {
-    public class JobPostUpdate : IPlugin
+    public class BatchPostUpdate : IPlugin
     {
         public void Execute(IServiceProvider serviceProvider)
         {
@@ -17,7 +21,7 @@ namespace Disruptive_Advantage_Customization
                 if (context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
                 {
                     var logic = new Logic();
-                    logic.JobPostUpdate(service, context, tracingService);
+                    logic.BatchPostUpdate(service, context, tracingService);
                 }
             }
             catch (Exception ex)

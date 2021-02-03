@@ -15,8 +15,11 @@ namespace Disruptive_Advantage_Customization.Entities
             var queryJobDestinationVessel = new QueryExpression("dia_jobdestinationvessel");
             queryJobDestinationVessel.ColumnSet.AddColumns("dia_jobdestinationvesselid", "dia_vessel", "dia_quantity");
             queryJobDestinationVessel.Criteria.AddCondition("dia_job", ConditionOperator.Equal, targetEntity.Id);
+            var query_dia_batch = queryJobDestinationVessel.AddLink("dia_batch", "dia_batch", "dia_batchid");
+            query_dia_batch.Columns.AddColumns("dia_stage");
+            query_dia_batch.EntityAlias = "stage";
             var DestinationQuantity = service.RetrieveMultiple(queryJobDestinationVessel);
-
+            
             return DestinationQuantity;
         }
 

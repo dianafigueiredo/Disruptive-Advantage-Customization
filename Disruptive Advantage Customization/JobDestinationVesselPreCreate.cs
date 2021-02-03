@@ -25,7 +25,7 @@ namespace WineryManagement
             }
             catch (Exception ex)
             {
-                throw new InvalidPluginExecutionException(String.Format("Error on Plugin JobDestinationVesselPreCreate with message: ", ex.Message));
+                throw new InvalidPluginExecutionException(String.Format("Error on Plugin JobDestinationVesselPreCreate with message: {0}", ex.Message));
             }
         }
     }

@@ -3,6 +3,7 @@ function onLoad(executionContext) {
     VerifyRemainingCapacity(formContext);
     formContext.getAttribute("dia_quantity").addOnChange(quantityOnChange);
     formContext.getAttribute("dia_vessel").addOnChange(vesselOnChange);
+    formContext.getAttribute("dia_vessel").addOnChange(PopulateFields);
 }
 
 function vesselOnChange(executionContext) {
@@ -150,8 +151,85 @@ function vesselOnChange(executionContext) {
         }
     }
 
+    function PopulateFields(executionContext) {
+        var formContext = executionContext.getFormContext();
+        var jobId = formContext.getAttribute("dia_job").getValue()[0].id;
+        var jobtype = "";
+
+        var fetchXml = [
+            "<fetch>",
+            "  <entity name='dia_job'>",
+            "    <attribute name='dia_type' />",
+            "    <filter>",
+            "      <condition attribute='dia_jobid' operator='eq' value='", jobId, "'/>",
+            "    </filter>",
+            "  </entity>",
+            "</fetch>",
+        ].join("");
+
+        var reqDest = new XMLHttpRequest();
+        reqDest.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_jobs?fetchXml=" + encodeURIComponent(fetchXml), false);
+        reqDest.setRequestHeader("OData-MaxVersion", "4.0");
+        reqDest.setRequestHeader("OData-Version", "4.0");
+        reqDest.setRequestHeader("Accept", "application/json");
+        reqDest.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        reqDest.onreadystatechange = function () {
+            if (this.readyState === 4) {
+                reqDest.onreadystatechange = null;
+                if (this.status === 200) {
+                    var results = JSON.parse(this.response);
+                    if (results.value != null) {
+                        for (var i = 0; i < results.value.length; i++) {
+                            jobtype == results.value[i]["dia_type"];
+                        }
+                    }
+                }
+
+            }
+        };
+        reqDest.send();
+
+        //if(jobtype == "")
+
+    }
+
     function OpenForm(formContext) {
+
         var batch = formContext.getAttribute("dia_batch").getValue();
+
+        var RecordId = formContext.data.entity.getEntityReference();
+        var jobName = formContext.getAttribute("dia_name").getValue();
+        var entityFormOptions = {};
+        entityFormOptions["entityName"] = "dia_jobdestinationvessel";
+        var entityName = formContext.data.entity.getEntityName();
+
+        // Set default values for the Contact form
+        var formParameters = {};
+        formParameters["dia_batch"] = batch;
+        formParameters["dia_jobname"] = jobName;
+
+        if (entityName == "dia_vessel") {
+            var quantity = formContext.getAttribute("dia_occupation").getValue();
+
+
+            formParameters["dia_vessel"] = RecordId;
+        }
+        else if (entityName == "dia_job") {
+            var quantity = formContext.getAttribute("dia_quantity").getValue();
+            formParameters["dia_job"] = RecordId;
+        }
+
+        formParameters["dia_quantity"] = quantity;
+
+        // Open the form.
+        Xrm.Navigation.openForm(entityFormOptions, formParameters).then(
+            function (success) {
+                console.log(success);
+            },
+            function (error) {
+                console.log(error);
+            });
+        /*var batch = formContext.getAttribute("dia_batch").getValue();
         var quantity = formContext.getAttribute("dia_quantity").getValue();
         var jobId = formContext.data.entity.getId();
         var jobName = formContext.getAttribute("dia_name").getValue();
@@ -172,6 +250,9 @@ function vesselOnChange(executionContext) {
             },
             function (error) {
                 console.log(error);
-            });
+            });*/
     }
+
+
+
 }
