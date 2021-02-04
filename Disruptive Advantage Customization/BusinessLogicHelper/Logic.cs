@@ -33,7 +33,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
                 #endregion JobsToEmpty
 
-                var vesselEnt = service.Retrieve("dia_vessel", destVessel.Id, new ColumnSet("dia_occupation", "dia_capacity", "dia_name"));
+                var vesselEnt = service.Retrieve("dia_vessel", destVessel.Id, new ColumnSet("dia_occupation", "dia_capacity", "dia_name", "dia_remainingcapacity"));
                 var occVessel = vesselEnt.GetAttributeValue<decimal>("dia_occupation");
                 var capVessel = vesselEnt.GetAttributeValue<decimal>("dia_capacity");
                 var qtdJobDestVessel = jobDestination.GetAttributeValue<decimal>("dia_quantity");
@@ -45,11 +45,8 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] + " will not have that capacity, will exceeed in " + finalOccupation);
 
                 #region different actions
-
-                var VesselEntity = jobDestination.GetAttributeValue<EntityReference>("dia_vessel");
-                var vesselInfo = service.Retrieve("dia_vessel", VesselEntity.Id, new ColumnSet("dia_occupation", "dia_capacity", "dia_name", "dia_remainingcapacity"));
-                var vesselOccupation = vesselInfo.GetAttributeValue<decimal>("dia_occupation");
-                var vesselCapacity = vesselInfo.GetAttributeValue<decimal>("dia_capacity");
+                var vesselOccupation = vesselEnt.GetAttributeValue<decimal>("dia_occupation");
+                var vesselCapacity = vesselEnt.GetAttributeValue<decimal>("dia_capacity");
 
                 var JobEntity = jobDestination.GetAttributeValue<EntityReference>("dia_job");
                 var JobInfo = service.Retrieve(jobRef.LogicalName, JobEntity.Id, new ColumnSet("dia_schelduledstart", "dia_quantity", "dia_type"));
@@ -63,11 +60,11 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     }
                     if (vesselOccupation != 0)
                     {
-                        throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] + "is full");
+                        throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] + "is not empty");
                     }
                 }
 
-                if (jobtype != null && jobtype.Value == 914440000 || jobtype.Value == 914440003)
+                if (jobtype != null && jobtype.Value == 914440000 || jobtype.Value == 914440003) //In-Situ && Dispatch
                 { //if job type in-situ or dispatch +
                     if (vesselOccupation == 0)
                     {
