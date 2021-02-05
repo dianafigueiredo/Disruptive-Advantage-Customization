@@ -389,5 +389,56 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
             service.Create(createTransaction);
         }
 
+        {
+
+        public void JobSourceVesselPostUpdate(IOrganizationService service, ITracingService tracingService, IPluginExecutionContext context)
+
+        {
+       Entity JobSourceVessel = (Entity)context.InputParameters["Target"];
+            Entity preImageEntity = (Entity)context.PreEntityImages["PreImage"];
+
+            if (JobSourceVessel.Contains("dia_quantity") && JobSourceVessel.GetAttributeValue<decimal>("dia_quantity") != null){
+               
+                var quantity = JobSourceVessel.GetAttributeValue<decimal>("dia_quantity");
+                
+                var JobEntity = service.Retrieve(JobSourceVessel.LogicalName, JobSourceVessel.Id, new ColumnSet("dia_job"));
+
+                var jobId = JobEntity.Contains("dia_job") && JobEntity.GetAttributeValue<EntityReference>("dia_job") != null ? JobEntity.GetAttributeValue<EntityReference>("dia_job").Id : new Guid();
+            
+                var quantityJob = service.Retrieve("dia_job", jobId, new ColumnSet("dia_quantity")).GetAttributeValue<decimal>("dia_quantity");
+             
+                var JobType = service.Retrieve(JobEntity.GetAttributeValue<EntityReference>("dia_job").LogicalName, JobEntity.GetAttributeValue<EntityReference>("dia_job").Id, new ColumnSet("dia_type"));
+             
+                var quantityPreImage = preImageEntity.GetAttributeValue<decimal>("dia_quantity");
+               
+                var finalQuantity  = quantity - quantityPreImage;
+
+
+                if (JobType != null && JobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440003) //dispatch
+
+                {
+                   
+                    var JobQuantityUpdate = new Entity(JobType.LogicalName);
+                    JobQuantityUpdate.Id = jobId;
+                    JobQuantityUpdate.Attributes["dia_quantity"] = finalQuantity + quantityJob;
+
+
+                    service.Update(JobQuantityUpdate);
+
+                } 
+
+
+
+
+
+               
+
+
+
+
+            }
+
+
+        }
     }
 }

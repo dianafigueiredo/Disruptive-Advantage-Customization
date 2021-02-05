@@ -225,17 +225,20 @@ function PopulateFields(executionContext) {
                             var occupation = results.value[i]["dia_occupation"];
                             var batchId = results.value[i]["_dia_batch_value"];
                             var stageId = results.value[i]["_dia_stage_value"];
+                            var BatchName = GetNameBatch(formContext,batchId);
+                            var StageName = GetNameStage(formContext,stageId);
+
 
                             var lookupBatch = new Array();
                             lookupBatch[0] = new Object();
                             lookupBatch[0].id = batchId;
-                            //lookupBatch[0].name = "Custom Team";
+                            lookupBatch[0].name = BatchName;
                             lookupBatch[0].entityType = "dia_batch";
 
                             var lookupStage = new Array();
                             lookupStage[0] = new Object();
                             lookupStage[0].id = stageId;
-                            //lookupBatch[0].name = "Custom Team";
+                            lookupStage[0].name = StageName;
                             lookupStage[0].entityType = "dia_stage";
 
                             formContext.getAttribute("dia_batch").setValue(occupation);
@@ -249,6 +252,89 @@ function PopulateFields(executionContext) {
         };
         reqVessel.send();
     }
+
+}
+
+function GetNameBatch( formContext, batchId) {
+
+    var batchName = "";
+
+    var fetchXml = [
+        "<fetch top='50'>",
+        "  <entity name='dia_batch'>",
+        "    <attribute name='dia_name' />",
+        "    <filter>",
+        "      <condition attribute='dia_batchid' operator='eq' value='", batchId, "'/>",
+        "    </filter>",
+        "  </entity>",
+        "</fetch>",
+    ].join("");
+
+    var reqName = new XMLHttpRequest();
+    reqName.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_batchs?fetchXml=" + encodeURIComponent(fetchXml), false);
+    reqName.setRequestHeader("OData-MaxVersion", "4.0");
+    reqName.setRequestHeader("OData-Version", "4.0");
+    reqName.setRequestHeader("Accept", "application/json");
+    reqName.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+    reqName.onreadystatechange = function () {
+        if (this.readyState === 4) {
+            reqName.onreadystatechange = null;
+            if (this.status === 200) {
+                var results = JSON.parse(this.response);
+                if (results.value != null) {
+                    for (var i = 0; i < results.value.length; i++) {
+                        batchName = results.value[i]["dia_name"];
+                    }
+                }
+            }
+
+        }
+    };
+    reqName.send();
+
+    return batchName;
+
+}
+
+
+function GetNameStage(formContext ,StageId) {
+
+    var StageName = "";
+
+    var fetchXml = [
+        "<fetch top='50'>",
+        "  <entity name='dia_stage'>",
+        "    <attribute name='dia_name' />",
+        "    <filter>",
+        "      <condition attribute='dia_stageid' operator='eq' value='", StageId, "'/>",
+        "    </filter>",
+        "  </entity>",
+        "</fetch>",
+    ].join("");
+
+    var reqStageName = new XMLHttpRequest();
+    reqStageName.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_stages?fetchXml=" + encodeURIComponent(fetchXml), false);
+    reqStageName.setRequestHeader("OData-MaxVersion", "4.0");
+    reqStageName.setRequestHeader("OData-Version", "4.0");
+    reqStageName.setRequestHeader("Accept", "application/json");
+    reqStageName.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+    reqStageName.onreadystatechange = function () {
+        if (this.readyState === 4) {
+            reqStageName.onreadystatechange = null;
+            if (this.status === 200) {
+                var results = JSON.parse(this.response);
+                if (results.value != null) {
+                    for (var i = 0; i < results.value.length; i++) {
+                        StageName = results.value[i]["dia_name"];
+                    }
+                }
+            }
+
+        }
+    };
+    reqStageName.send();
+
+    return StageName;
 
 }
 
