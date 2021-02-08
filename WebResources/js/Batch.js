@@ -12,9 +12,12 @@ function HideJob (executionContext)
     if (status == 914440003) {// Active
 
         formContext.ui.controls.get('jobs').setVisible(true);
+        formContext.ui.controls.get('vessels').setVisible(true);
+
     }
     else if (status == 914440004){ //inactive
     
         formContext.ui.controls.get('jobs').setVisible(false);
+        formContext.ui.controls.get('vessels').setVisible(true);
     }
 }

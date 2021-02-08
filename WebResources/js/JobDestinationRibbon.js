@@ -241,7 +241,7 @@ function PopulateFields(executionContext) {
                             lookupStage[0].name = StageName;
                             lookupStage[0].entityType = "dia_stage";
 
-                            formContext.getAttribute("dia_batch").setValue(occupation);
+                            formContext.getAttribute("dia_occupation").setValue(occupation);
                             formContext.getAttribute("dia_batch").setValue(lookupBatch);
                             formContext.getAttribute("dia_stage").setValue(lookupStage);
                         }
@@ -252,7 +252,47 @@ function PopulateFields(executionContext) {
         };
         reqVessel.send();
     }
+    if (jobtype == 914440001 || jobtype == 914440002) {
+        if (formContext.getAttribute("dia_vessel").getValue() == null) return;
 
+        var vesselId = formContext.getAttribute("dia_vessel").getValue()[0].id;
+
+        var fetchXmlVessel = [
+            "<fetch>",
+            "  <entity name='dia_vessel'>",
+            "    <attribute name='dia_occupation' />",
+            "    <filter>",
+            "      <condition attribute='dia_vesselid' operator='eq' value='", vesselId, "'/>",
+            "    </filter>",
+            "  </entity>",
+            "</fetch>",
+        ].join("");
+
+        var reqVessel = new XMLHttpRequest();
+        reqVessel.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_vessels?fetchXml=" + encodeURIComponent(fetchXmlVessel), false);
+        reqVessel.setRequestHeader("OData-MaxVersion", "4.0");
+        reqVessel.setRequestHeader("OData-Version", "4.0");
+        reqVessel.setRequestHeader("Accept", "application/json");
+        reqVessel.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        reqVessel.onreadystatechange = function () {
+            if (this.readyState === 4) {
+                reqDest.onreadystatechange = null;
+                if (this.status === 200) {
+                    var results = JSON.parse(this.response);
+                    if (results.value != null) {
+                        for (var i = 0; i < results.value.length; i++) {
+                            var occupation = results.value[i]["dia_occupation"];
+
+                            formContext.getAttribute("dia_prevolume").setValue(occupation);
+
+                        }
+                    }
+                }
+
+            }
+        };
+        reqVessel.send();
+    }
 }
 
 function GetNameBatch( formContext, batchId) {

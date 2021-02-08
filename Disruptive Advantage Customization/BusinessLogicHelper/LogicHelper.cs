@@ -28,16 +28,27 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
         /// Function to calculate the final occupation of the vessel
         /// </summary>
         /// <param name="capVessel">EntityCollection</param>
-        /// <param name="occVessel">AttributName</param>
-        /// <param name="qtdJobDestVessel">AttributName</param>
-        /// <param name="qtdFill">AttributName</param>
-        /// <param name="qtdDrop">AttributName</param>
+        /// <param name="occVessel">AttributeName</param>
+        /// <param name="qtdJobDestVessel">AttributeName</param>
+        /// <param name="qtdFill">AttributeName</param>
+        /// <param name="qtdDrop">AttributeName</param>
         /// <returns>Final occupation</returns>
         public decimal? FinalOccupation(decimal capVessel, decimal occVessel, decimal qtdJobDestVessel, decimal? qtdFill, decimal? qtdDrop)
         {
             var finalOccupation = capVessel - occVessel - qtdJobDestVessel - qtdFill + qtdDrop;
 
             return finalOccupation;
+        }
+        public decimal? VesselOccupation(EntityCollection vesselAsDestination)
+        {
+            decimal occupation = 0;
+
+            foreach (var vessel in vesselAsDestination.Entities)
+            {
+                occupation += vessel.GetAttributeValue<decimal>("dia_quantity");
+            }
+
+            return occupation;
         }
     }
 }
