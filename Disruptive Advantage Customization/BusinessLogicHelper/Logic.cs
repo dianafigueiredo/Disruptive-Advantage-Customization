@@ -57,9 +57,9 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
 
 
-                var vesselOccupation = logiHelper.VesselOccupation(vesselAsDestination);
+                var plannedvesselOccupation = logiHelper.VesselOccupation(vesselAsDestination);
 
-                tracingService.Trace("vessel Occupation: " + vesselOccupation);
+                tracingService.Trace("vessel Occupation: " + plannedvesselOccupation);
 
                 //vesselOccupation = vesselEnt.GetAttributeValue<decimal>("dia_occupation");
                 var vesselCapacity = vesselEnt.GetAttributeValue<decimal>("dia_capacity");
@@ -68,13 +68,13 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                 var JobInfo = service.Retrieve(jobRef.LogicalName, JobEntity.Id, new ColumnSet("dia_schelduledstart", "dia_quantity", "dia_type"));
                 var jobtype = JobInfo.GetAttributeValue<OptionSetValue>("dia_type") != null ? JobInfo.GetAttributeValue<OptionSetValue>("dia_type") : null;
 
-                if (jobtype != null && jobtype.Value == 914440002) // if job type intake
+                if (jobtype != null && (jobtype.Value == 914440002 || jobtype.Value == 914440001)) // if job type intake or transfer
                 {
                     if (jobDestination.GetAttributeValue<decimal>("dia_quantity") > vesselCapacity)
                     {
                         throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " does not have enough capacity. Max. Capacity: " + Decimal.ToInt32(vesselCapacity) + "L");
                     }
-                    if (vesselOccupation != 0)
+                    if (plannedvesselOccupation != 0)
                     {
                         throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] + "is not empty");
                     }
@@ -82,11 +82,13 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
                 if (jobtype != null && jobtype.Value == 914440000 || jobtype.Value == 914440003) //In-Situ && Dispatch
                 { //if job type in-situ or dispatch +
-                    if (vesselOccupation == 0)
+                    if (plannedvesselOccupation <= 0)
                     {
-                        throw new InvalidPluginExecutionException("The vessel" + vesselEnt["dia_name"] + " is empty");
+                        throw new InvalidPluginExecutionException("The vessel" + vesselEnt["dia_name"] + "at this date " + jobEnt["dia_schelduledstart"] + " is empty");
                     }
                 }
+
+
                 #endregion
 
                 #region Update Blend
@@ -153,8 +155,8 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                             if (destinationVessel.GetAttributeValue<EntityReference>("dia_vessel") != null)
                             {
                                 var vesselInformation = service.Retrieve(destinationVessel.GetAttributeValue<EntityReference>("dia_vessel").LogicalName, destinationVessel.GetAttributeValue<EntityReference>("dia_vessel").Id, new ColumnSet("dia_occupation", "dia_composition", "dia_location", "dia_stage"));
-                                var stage = destinationVessel.GetAttributeValue<AliasedValue>("stage.dia_stage") == null ? null : (EntityReference)destinationVessel.GetAttributeValue<AliasedValue>("stage.dia_stage").Value;
-
+                                var stage = destinationVessel.GetAttributeValue<EntityReference>("dia_stage") == null ? null : destinationVessel.GetAttributeValue<EntityReference>("dia_stage");
+                                tracingService.Trace("stage: " + stage);
                                 var sourceVesselUpdate = new Entity(vesselInformation.LogicalName);
                                 sourceVesselUpdate.Id = vesselInformation.Id;
                                 sourceVesselUpdate.Attributes["dia_occupation"] = vesselInformation.GetAttributeValue<decimal>("dia_occupation") + destinationVessel.GetAttributeValue<decimal>("dia_quantity"); // ocupação do vessel + quantity do job destination vessel.
@@ -164,6 +166,8 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
 
                                 service.Update(sourceVesselUpdate);
+
+                                CreateTransaction(service, tracingService, vesselInformation, jobInformation, destinationVessel, stage);
                             }
                             //update statuscode job destination vessel para completed
                             var vesselUpdate = new Entity(destinationVessel.LogicalName);
@@ -188,7 +192,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                             if (sourceVessel.GetAttributeValue<EntityReference>("dia_vessel") != null)
                             {
                                 var vesselInformation = service.Retrieve(sourceVessel.GetAttributeValue<EntityReference>("dia_vessel").LogicalName, sourceVessel.GetAttributeValue<EntityReference>("dia_vessel").Id, new ColumnSet("dia_occupation", "dia_composition", "dia_location", "dia_stage"));
-                                var stage = sourceVessel.GetAttributeValue<AliasedValue>("stage.dia_stage") == null ? null : (EntityReference)sourceVessel.GetAttributeValue<AliasedValue>("stage.dia_stage").Value;
+                                var stage = sourceVessel.GetAttributeValue<EntityReference>("dia_stage") == null ? null : sourceVessel.GetAttributeValue<EntityReference>("dia_stage");
 
                                 var sourceVesselUpdate = new Entity(vesselInformation.LogicalName);
                                 sourceVesselUpdate.Id = vesselInformation.Id;
@@ -201,6 +205,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                                 }
                                 service.Update(sourceVesselUpdate);
 
+                                CreateTransaction(service, tracingService, vesselInformation, jobInformation, sourceVessel, stage);
                             }
                             var jobSourceVesselUpdate = new Entity(sourceVessel.LogicalName);
                             jobSourceVesselUpdate.Id = sourceVessel.Id;
@@ -220,8 +225,8 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                         foreach (var jobdestinationvessel in resultsQueryJobDestinationVessel.Entities)
                         {
                             var vesselInformation = service.Retrieve(jobdestinationvessel.GetAttributeValue<EntityReference>("dia_vessel").LogicalName, jobdestinationvessel.GetAttributeValue<EntityReference>("dia_vessel").Id, new ColumnSet("dia_occupation", "dia_composition", "dia_location", "dia_stage"));
-                            var stage = jobdestinationvessel.GetAttributeValue<AliasedValue>("stage.dia_stage") == null ? null : (EntityReference)jobdestinationvessel.GetAttributeValue<AliasedValue>("stage.dia_stage").Value;
-                            
+                            var stage = jobdestinationvessel.GetAttributeValue<EntityReference>("dia_stage") == null ? null : jobdestinationvessel.GetAttributeValue<EntityReference>("dia_stage");
+
                             var destinationVesselUpdate = new Entity(vesselInformation.LogicalName);
                             destinationVesselUpdate.Id = vesselInformation.Id;
                             destinationVesselUpdate.Attributes["dia_occupation"] = jobdestinationvessel.GetAttributeValue<decimal>("dia_quantity") + vesselInformation.GetAttributeValue<decimal>("dia_occupation");
@@ -231,16 +236,18 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
                             service.Update(destinationVesselUpdate);
 
+                            CreateTransaction(service, tracingService, vesselInformation, jobInformation, jobdestinationvessel, stage);
+
                             #region Update jobdestinationvessel statuscode and postvolume
                             var vesselUpdate = new Entity(jobdestinationvessel.LogicalName);
                             vesselUpdate.Id = jobdestinationvessel.Id;
-                            vesselUpdate.Attributes["statuscode"] = new OptionSetValue(914440001);//Completed
-                            vesselUpdate.Attributes["dia_postvolume"] = jobdestinationvessel.GetAttributeValue<decimal>("dia_occupation") + jobdestinationvessel.GetAttributeValue<decimal>("dia_prevolume");
+                            vesselUpdate.Attributes["statuscode"] = new OptionSetValue(914440001);//Completeds
+                            vesselUpdate.Attributes["dia_postvolume"] = jobdestinationvessel.GetAttributeValue<decimal>("dia_quantity") + jobdestinationvessel.GetAttributeValue<decimal>("dia_prevolume");
                             service.Update(vesselUpdate);
                             #endregion
                         }
                         #endregion
-                        
+
                     }
 
                     if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440003)//dispatch
@@ -259,7 +266,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                             if (sourceVessel.GetAttributeValue<EntityReference>("dia_vessel") != null)
                             {
                                 var vesselInformation = service.Retrieve(sourceVessel.GetAttributeValue<EntityReference>("dia_vessel").LogicalName, sourceVessel.GetAttributeValue<EntityReference>("dia_vessel").Id, new ColumnSet("dia_occupation", "dia_composition", "dia_location", "dia_stage"));
-                                var stage = sourceVessel.GetAttributeValue<AliasedValue>("stage.dia_stage") == null ? null : (EntityReference)sourceVessel.GetAttributeValue<AliasedValue>("stage.dia_stage").Value;
+                                var stage = sourceVessel.GetAttributeValue<EntityReference>("dia_stage") == null ? null : sourceVessel.GetAttributeValue<EntityReference>("dia_stage");
 
                                 var sourceVesselUpdate = new Entity(vesselInformation.LogicalName);
                                 sourceVesselUpdate.Id = vesselInformation.Id;
@@ -272,12 +279,12 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                                 }
                                 service.Update(sourceVesselUpdate);
                                 #endregion
+                                CreateTransaction(service, tracingService, vesselInformation, jobInformation, sourceVessel, stage);
                             }
                         }
                     }
                     if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440000)// in-situ
                     {
-
                         var jobInformation = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_batch"));
                         var batchComposition = jobInformation != null && jobInformation.Contains("dia_batch") ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_batch").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_batch").Id, new ColumnSet("dia_batchcomposition")) : null;
 
@@ -355,15 +362,16 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
             Entity JobSourceVessel = (Entity)context.InputParameters["Target"];
             Entity preImageEntity = (Entity)context.PreEntityImages["PreImage"];
 
-            if (JobSourceVessel.Contains("dia_quantity") && JobSourceVessel.GetAttributeValue<decimal>("dia_quantity") != null){
-               
+            if (JobSourceVessel.Contains("dia_quantity") && JobSourceVessel.GetAttributeValue<decimal>("dia_quantity") != null)
+            {
+
                 var quantity = JobSourceVessel.GetAttributeValue<decimal>("dia_quantity");
                 var JobEntity = service.Retrieve(JobSourceVessel.LogicalName, JobSourceVessel.Id, new ColumnSet("dia_job"));
                 var jobId = JobEntity.Contains("dia_job") && JobEntity.GetAttributeValue<EntityReference>("dia_job") != null ? JobEntity.GetAttributeValue<EntityReference>("dia_job").Id : new Guid();
                 var quantityJob = service.Retrieve("dia_job", jobId, new ColumnSet("dia_quantity")).GetAttributeValue<decimal>("dia_quantity");
                 var JobType = service.Retrieve(JobEntity.GetAttributeValue<EntityReference>("dia_job").LogicalName, JobEntity.GetAttributeValue<EntityReference>("dia_job").Id, new ColumnSet("dia_type"));
                 var quantityPreImage = preImageEntity.GetAttributeValue<decimal>("dia_quantity");
-                var finalQuantity  = quantity - quantityPreImage;
+                var finalQuantity = quantity - quantityPreImage;
 
                 if (JobType != null && JobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440003 || JobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440001) //dispatch And Transfer/blend
                 {
@@ -371,8 +379,8 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     JobQuantityUpdate.Id = jobId;
                     JobQuantityUpdate.Attributes["dia_quantity"] = finalQuantity + quantityJob;
                     service.Update(JobQuantityUpdate);
-                } 
-                
+                }
+
 
 
             }

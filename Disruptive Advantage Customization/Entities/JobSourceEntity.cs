@@ -22,7 +22,7 @@ namespace Disruptive_Advantage_Customization.Entities
         }
         public EntityCollection GetVesselJobAsDestination(IOrganizationService service, EntityReference vessel, Entity jobEnt)
         {
-            var query = new QueryExpression("dia_jobsourcevessel");
+            var query = new QueryExpression("dia_jobdestinationvessel");
             query.ColumnSet.AddColumns("dia_vessel", "dia_quantity");
             query.Criteria.AddCondition("dia_vessel", ConditionOperator.Equal, vessel.Id);
             var query_dia_job = query.AddLink("dia_job", "dia_job", "dia_jobid");

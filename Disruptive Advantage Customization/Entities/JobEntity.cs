@@ -13,7 +13,7 @@ namespace Disruptive_Advantage_Customization.Entities
         public EntityCollection GetDestinationQuantity(IOrganizationService service, Entity targetEntity) {
        
             var queryJobDestinationVessel = new QueryExpression("dia_jobdestinationvessel");
-            queryJobDestinationVessel.ColumnSet.AddColumns("dia_jobdestinationvesselid", "dia_vessel", "dia_quantity", "dia_prevolume");
+            queryJobDestinationVessel.ColumnSet.AddColumns("dia_jobdestinationvesselid", "dia_vessel", "dia_quantity", "dia_prevolume", "dia_stage");
             queryJobDestinationVessel.Criteria.AddCondition("dia_job", ConditionOperator.Equal, targetEntity.Id);
             var query_dia_batch = queryJobDestinationVessel.AddLink("dia_batch", "dia_batch", "dia_batchid");
             query_dia_batch.Columns.AddColumns("dia_stage");
@@ -26,7 +26,7 @@ namespace Disruptive_Advantage_Customization.Entities
         public EntityCollection GetSourceQuantity(IOrganizationService service, Entity targetEntity) {
 
             var querySourceVessel = new QueryExpression("dia_jobsourcevessel");
-            querySourceVessel.ColumnSet.AddColumns("dia_jobsourcevesselid", "dia_vessel", "dia_quantity");
+            querySourceVessel.ColumnSet.AddColumns("dia_jobsourcevesselid", "dia_vessel", "dia_quantity", "dia_stage");
             querySourceVessel.Criteria.AddCondition("dia_job", ConditionOperator.Equal, targetEntity.Id);
             var query_dia_batch = querySourceVessel.AddLink("dia_batch", "dia_batch", "dia_batchid");
             query_dia_batch.Columns.AddColumns("dia_stage");
