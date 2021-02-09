@@ -93,7 +93,8 @@ function quantityOnChange(executionContext) {
     VerifyRemainingCapacity(formContext);
 }
 
-function VerifyRemainingCapacity(formContext) {
+function VerifyRemainingCapacity(formContext)
+{
     if (formContext.getAttribute("dia_job").getValue() != null) {
         var jobId = formContext.getAttribute("dia_job").getValue()[0].id;
         var allocatedCapacity = 0;
@@ -150,6 +151,7 @@ function VerifyRemainingCapacity(formContext) {
         req.send();
     }
 }
+
 function PopulateFields(executionContext) {
     var formContext = executionContext.getFormContext();
     if (formContext.getAttribute("dia_job").getValue() == null) return; 
@@ -282,8 +284,15 @@ function PopulateFields(executionContext) {
                     if (results.value != null) {
                         for (var i = 0; i < results.value.length; i++) {
                             var occupation = results.value[i]["dia_occupation"];
-
+                            var prevolume = formContext.getAttribute("dia_prevolume").getValue();
+                            var quantity = formContext.getAttribute("dia_quantity").getValue();
+                            var sum = 0;
+                            sum = Number(quantity) + Number(occupation);
                             formContext.getAttribute("dia_prevolume").setValue(occupation);
+                            formContext.getAttribute("dia_postvolume").setValue(sum);
+                      
+
+
 
                         }
                     }
