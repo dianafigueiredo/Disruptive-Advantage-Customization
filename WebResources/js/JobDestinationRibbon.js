@@ -4,8 +4,8 @@ function onLoadJobDestinationRibbon(executionContext) {
     formContext.getAttribute("dia_quantity").addOnChange(quantityOnChange);
     //formContext.getAttribute("dia_vessel").addOnChange(vesselOnChange);
     formContext.getAttribute("dia_vessel").addOnChange(PopulateFields);
+    formContext.getAttribute("dia_postvolume").addOnChange(PopulateFields);
 }
-
 function vesselOnChange(executionContext) {
     var formContext = executionContext.getFormContext();
     if (formContext.getAttribute("dia_vessel").getValue() != null) {
@@ -241,7 +241,7 @@ function PopulateFields(executionContext) {
                             lookupStage[0].name = StageName;
                             lookupStage[0].entityType = "dia_stage";
 
-                            formContext.getAttribute("dia_occupation").setValue(occupation);
+                            formContext.getAttribute("dia_quantity").setValue(occupation);
                             formContext.getAttribute("dia_batch").setValue(lookupBatch);
                             formContext.getAttribute("dia_stage").setValue(lookupStage);
                         }

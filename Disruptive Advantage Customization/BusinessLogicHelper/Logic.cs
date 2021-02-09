@@ -76,7 +76,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     }
                     if (plannedvesselOccupation != 0)
                     {
-                        throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] + "is not empty");
+                        throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] + " is not empty");
                     }
                 }
 
@@ -304,6 +304,17 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                                 jobAdditiveUpdate.Attributes["dia_vessel"] = jobDestinationVessel.Contains("dia_vessel") == true ? jobDestinationVessel.GetAttributeValue<EntityReference>("dia_vessel") : null;
 
                                 service.Update(jobAdditiveUpdate);
+                            }
+                            if (jobDestinationVessel.GetAttributeValue<EntityReference>("dia_stage") != null)
+                            {
+                                var stage = jobDestinationVessel.GetAttributeValue<EntityReference>("dia_stage") == null ? null : jobDestinationVessel.GetAttributeValue<EntityReference>("dia_stage");
+                                var vessel = jobDestinationVessel.GetAttributeValue<EntityReference>("dia_vessel") == null ? null : jobDestinationVessel.GetAttributeValue<EntityReference>("dia_vessel");
+
+                                var VesselUpdate = new Entity(vessel.LogicalName);
+                                VesselUpdate.Id = vessel.Id;
+                                VesselUpdate.Attributes["dia_stage"] = stage;
+
+                                service.Update(VesselUpdate);
                             }
                         }
 

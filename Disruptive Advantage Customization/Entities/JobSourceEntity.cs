@@ -31,7 +31,11 @@ namespace Disruptive_Advantage_Customization.Entities
             query_dia_job.LinkCriteria.FilterOperator = LogicalOperator.Or;
             query_dia_job.LinkCriteria.AddCondition("dia_type", ConditionOperator.Equal, 914440003);
             query_dia_job.LinkCriteria.AddCondition("dia_type", ConditionOperator.Equal, 914440001);
-            query_dia_job.LinkCriteria.AddCondition("dia_schelduledstart", ConditionOperator.LessEqual, jobEnt.GetAttributeValue<DateTime>("dia_schelduledstart"));
+            var query_dia_job_LinkCriteria_0 = new FilterExpression();
+            query_dia_job.LinkCriteria.AddFilter(query_dia_job_LinkCriteria_0);
+            // Define filter query_dia_job_LinkCriteria_0
+            query_dia_job_LinkCriteria_0.AddCondition("statuscode", ConditionOperator.NotEqual, 914440005);
+            query_dia_job_LinkCriteria_0.AddCondition("dia_schelduledstart", ConditionOperator.LessEqual, jobEnt.GetAttributeValue<DateTime>("dia_schelduledstart"));
 
             EntityCollection resultsquery = service.RetrieveMultiple(query);
 
