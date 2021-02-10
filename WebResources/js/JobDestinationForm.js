@@ -5,7 +5,6 @@ function onLoad(executionContext) {
 
 function formDestination(executionContext) {
 
-    console.log("1");
     var formContext = executionContext.getFormContext();
     if (formContext.getAttribute('dia_job').getValue() == null) return;
     var jobId = formContext.getAttribute('dia_job').getValue()[0].id;
@@ -21,7 +20,7 @@ function formDestination(executionContext) {
         "</fetch>",
     ].join("");
 
-    console.log("2")
+
 
     var req = new XMLHttpRequest();
     req.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_jobs?fetchXml=" + encodeURIComponent(fetchXml), false);
@@ -44,25 +43,14 @@ function formDestination(executionContext) {
         }
     };
     req.send();
-    console.log("3")
     if (jobType == 914440000) {
-        console.log("4")
 
         formContext.ui.controls.get('dia_quantity').setVisible(false);
     }
 
     else {
-        console.log("5")
-
+        
         formContext.ui.controls.get('dia_quantity').setVisible(true);
-
     }
-
-}
-
-function PreVolumePost(executionContext) {
-
-
-
 
 }

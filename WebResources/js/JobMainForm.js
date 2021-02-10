@@ -145,6 +145,7 @@ function jobTypeOnChange(executionContext) {
 		setVisibleControl(formContext, "DestinationVessel", true);
 		setRequiredLevelControl(formContext, "dia_additive", "none");
 		setRequiredLevelControl(formContext, "dia_quantity", "required");
+		formContext.getControl("dia_quantity").setDisabled(false);
     }
 	else if(intake == 914440003){ //Dispatch
         setVisibleControl(formContext, "dia_batch", false);
