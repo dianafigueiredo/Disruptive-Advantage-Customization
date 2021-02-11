@@ -329,7 +329,6 @@ function PopulateFields(executionContext) {
 
     if (jobtype == 914440002) //Intake 
     {
-        alert("jobtype is:" + jobtype);
         if (formContext.getAttribute("dia_job").getValue() == null) return;
         
         var JobId = formContext.getAttribute("dia_job").getValue()[0].id;
@@ -346,7 +345,6 @@ function PopulateFields(executionContext) {
             "</fetch>",
         ].join("");
 
-        alert("value fetch :" + fetchXmlJob);
       
 
         var reqjob = new XMLHttpRequest();
@@ -364,14 +362,11 @@ function PopulateFields(executionContext) {
                         for (var i = 0; i < results.value.length; i++) {
                             var quantityjob = results.value[i]["dia_quantity"];
                             var prevolume = formContext.getAttribute("dia_prevolume").getValue();
-                            alert("value quantity :" + quantityjob);
-                            alert("value sum :" + sum);
-                            alert("value sum :" + prevolume);
                         
 
                             var sum = 0;
-                            sum = Number(quantityjob) + Number(quantityjob);
-                            formContext.getAttribute("dia_prevolume").setValue(quantityjob);
+                            sum = Number(quantityjob);
+                            formContext.getAttribute("dia_prevolume").setValue(0);
                             formContext.getAttribute("dia_postvolume").setValue(sum);
 
                         }

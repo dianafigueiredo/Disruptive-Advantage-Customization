@@ -74,7 +74,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     {
                         throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " does not have enough capacity. Max. Capacity: " + Decimal.ToInt32(vesselCapacity) + "L");
                     }
-                    if (plannedvesselOccupation != 0)
+                    if (plannedvesselOccupation != 0 && jobtype.Value != 914440001)
                     {
                         throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] + " is not empty");
                     }
@@ -124,8 +124,6 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     jobUpdate.Attributes["dia_quantity"] = sumQuantity;
                     service.Update(jobUpdate);
                 }
-
-
             }
         }
 
@@ -182,9 +180,46 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                         var jobInformation = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_batch"));
                         var batchComposition = jobInformation != null && jobInformation.Contains("dia_batch") ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_batch").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_batch").Id, new ColumnSet("dia_batchcomposition")) : null;
                         //Quando o job fica completed passar o conteúdo do source vessel para o destination vessel. Ainda não está implementado destination vessel, só no source.
-                        #region Update Source Vessel Quantity and Composition
+
+                        #region Update Destination Vessel Quantity and Composition
 
                         var JobLogic = new JobEntity();
+                        EntityCollection resultsQueryJobDestinationVessel = JobLogic.GetDestinationQuantity(service, targetEntity);
+
+                        tracingService.Trace("results Count: " + resultsQueryJobDestinationVessel.Entities.Count);
+
+                        foreach (var jobdestinationvessel in resultsQueryJobDestinationVessel.Entities)
+                        {
+                            var vesselInformation = service.Retrieve(jobdestinationvessel.GetAttributeValue<EntityReference>("dia_vessel").LogicalName, jobdestinationvessel.GetAttributeValue<EntityReference>("dia_vessel").Id, new ColumnSet("dia_occupation", "dia_composition", "dia_location", "dia_stage"));
+                            var stage = jobdestinationvessel.GetAttributeValue<EntityReference>("dia_stage") == null ? null : jobdestinationvessel.GetAttributeValue<EntityReference>("dia_stage");
+
+                            var destinationVesselUpdate = new Entity(vesselInformation.LogicalName);
+                            destinationVesselUpdate.Id = vesselInformation.Id;
+                            destinationVesselUpdate.Attributes["dia_occupation"] = jobdestinationvessel.GetAttributeValue<decimal>("dia_quantity") + vesselInformation.GetAttributeValue<decimal>("dia_occupation");
+                            //destinationVesselUpdate.Attributes["dia_batch"] = jobInformation != null ? jobInformation.GetAttributeValue<EntityReference>("dia_batch") : null;
+                            tracingService.Trace("batch: " + jobdestinationvessel.GetAttributeValue<EntityReference>("dia_batch"));
+                            destinationVesselUpdate.Attributes["dia_batch"] = jobdestinationvessel != null ? jobdestinationvessel.GetAttributeValue<EntityReference>("dia_batch") : null;
+                            destinationVesselUpdate.Attributes["dia_composition"] = batchComposition != null ? batchComposition.GetAttributeValue<EntityReference>("dia_batchcomposition") : null;
+                            destinationVesselUpdate.Attributes["dia_stage"] = stage;
+
+                            service.Update(destinationVesselUpdate);
+
+                            CreateTransaction(service, tracingService, vesselInformation, jobInformation, jobdestinationvessel, stage);
+
+                            #region Update jobdestinationvessel statuscode and postvolume
+                            var vesselUpdate = new Entity(jobdestinationvessel.LogicalName);
+                            vesselUpdate.Id = jobdestinationvessel.Id;
+                            vesselUpdate.Attributes["statuscode"] = new OptionSetValue(914440001);//Completeds
+                            vesselUpdate.Attributes["dia_postvolume"] = jobdestinationvessel.GetAttributeValue<decimal>("dia_quantity") + jobdestinationvessel.GetAttributeValue<decimal>("dia_prevolume");
+                            service.Update(vesselUpdate);
+                            #endregion
+
+                            CreateDestinationVesselAdditives(service, tracingService, vesselInformation, targetEntity);
+                        }
+                        #endregion
+
+                        #region Update Source Vessel Quantity and Composition
+
                         EntityCollection resultsSourceVessel = JobLogic.GetSourceQuantity(service, targetEntity);
 
                         foreach (var sourceVessel in resultsSourceVessel.Entities)
@@ -203,7 +238,10 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                                     sourceVesselUpdate.Attributes["dia_batch"] = null;
                                     sourceVesselUpdate.Attributes["dia_composition"] = null;
                                 }
+
                                 service.Update(sourceVesselUpdate);
+
+                                UpdateSourceVesselAdditives(service, tracingService, vesselInformation.GetAttributeValue<decimal>("dia_occupation"), sourceVessel.GetAttributeValue<decimal>("dia_quantity"), vesselInformation.ToEntityReference());
 
                                 CreateTransaction(service, tracingService, vesselInformation, jobInformation, sourceVessel, stage);
                             }
@@ -214,40 +252,6 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                         }
 
                         #endregion
-
-                        #region Update Destination Vessel Quantity and Composition
-
-                        //var JobLogic = new JobEntity();
-                        EntityCollection resultsQueryJobDestinationVessel = JobLogic.GetDestinationQuantity(service, targetEntity);
-
-
-
-                        foreach (var jobdestinationvessel in resultsQueryJobDestinationVessel.Entities)
-                        {
-                            var vesselInformation = service.Retrieve(jobdestinationvessel.GetAttributeValue<EntityReference>("dia_vessel").LogicalName, jobdestinationvessel.GetAttributeValue<EntityReference>("dia_vessel").Id, new ColumnSet("dia_occupation", "dia_composition", "dia_location", "dia_stage"));
-                            var stage = jobdestinationvessel.GetAttributeValue<EntityReference>("dia_stage") == null ? null : jobdestinationvessel.GetAttributeValue<EntityReference>("dia_stage");
-
-                            var destinationVesselUpdate = new Entity(vesselInformation.LogicalName);
-                            destinationVesselUpdate.Id = vesselInformation.Id;
-                            destinationVesselUpdate.Attributes["dia_occupation"] = jobdestinationvessel.GetAttributeValue<decimal>("dia_quantity") + vesselInformation.GetAttributeValue<decimal>("dia_occupation");
-                            destinationVesselUpdate.Attributes["dia_batch"] = jobInformation != null ? jobInformation.GetAttributeValue<EntityReference>("dia_batch") : null;
-                            destinationVesselUpdate.Attributes["dia_composition"] = batchComposition != null ? batchComposition.GetAttributeValue<EntityReference>("dia_batchcomposition") : null;
-                            destinationVesselUpdate.Attributes["dia_stage"] = stage;
-
-                            service.Update(destinationVesselUpdate);
-
-                            CreateTransaction(service, tracingService, vesselInformation, jobInformation, jobdestinationvessel, stage);
-
-                            #region Update jobdestinationvessel statuscode and postvolume
-                            var vesselUpdate = new Entity(jobdestinationvessel.LogicalName);
-                            vesselUpdate.Id = jobdestinationvessel.Id;
-                            vesselUpdate.Attributes["statuscode"] = new OptionSetValue(914440001);//Completeds
-                            vesselUpdate.Attributes["dia_postvolume"] = jobdestinationvessel.GetAttributeValue<decimal>("dia_quantity") + jobdestinationvessel.GetAttributeValue<decimal>("dia_prevolume");
-                            service.Update(vesselUpdate);
-                            #endregion
-                        }
-                        #endregion
-
                     }
 
                     if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440003)//dispatch
@@ -324,7 +328,50 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                 #endregion
             }
         }
+        public void UpdateSourceVesselAdditives(IOrganizationService service, ITracingService tracingService, decimal vesselCurrentOccupation, decimal vesselQuantitytoRemove, EntityReference vesselId)
+        {
+            var JobLogic = new JobEntity();
+            EntityCollection jobAdditives = JobLogic.GetAdditiveVessel(service, vesselId);
 
+            decimal removedPercentage = vesselQuantitytoRemove / vesselCurrentOccupation;
+
+            foreach (var additive in jobAdditives.Entities)
+            {
+                if (removedPercentage == 1) service.Delete(additive.LogicalName, additive.Id);
+                else
+                {
+                    var additiveQuantity = additive.GetAttributeValue<decimal>("dia_quantity");
+
+                    additive.Attributes["dia_quantity"] = additiveQuantity * removedPercentage;
+                    service.Update(additive);
+                }
+            }
+        }
+        public void CreateDestinationVesselAdditives(IOrganizationService service, ITracingService tracingService, Entity destinationVesselInformation, Entity targetEntity)
+        {
+            var JobLogic = new JobEntity();
+            EntityCollection resultsSourceVessel = JobLogic.GetSourceQuantity(service, targetEntity);
+
+            foreach (var sourceVessel in resultsSourceVessel.Entities)
+            {
+                var vesselInformation = service.Retrieve(sourceVessel.GetAttributeValue<EntityReference>("dia_vessel").LogicalName, sourceVessel.GetAttributeValue<EntityReference>("dia_vessel").Id, new ColumnSet("dia_occupation", "dia_composition", "dia_location", "dia_stage"));
+                var vesselInfo = sourceVessel.GetAttributeValue<EntityReference>("dia_vessel");
+                var jobSourceVesselQuantity = sourceVessel.GetAttributeValue<decimal>("dia_quantity");
+                var removedPercentage = 1 - (jobSourceVesselQuantity / vesselInformation.GetAttributeValue<decimal>("dia_occupation"));
+                EntityCollection jobAdditives = JobLogic.GetAdditiveVessel(service, vesselInfo);
+
+                foreach (var additive in jobAdditives.Entities)
+                {
+                    var createAdditive = new Entity(additive.LogicalName);
+                    createAdditive.Attributes["dia_quantity"] = additive.GetAttributeValue<decimal>("dia_quantity") * removedPercentage;
+                    createAdditive.Attributes["dia_vessel"] = new EntityReference(destinationVesselInformation.LogicalName, destinationVesselInformation.Id);
+                    createAdditive.Attributes["dia_jobid"] = additive.GetAttributeValue<EntityReference>("dia_jobid");
+                    createAdditive.Attributes["dia_additiveid"] = additive.GetAttributeValue<EntityReference>("dia_additiveid");
+
+                    service.Create(createAdditive);
+                }
+            }
+        }
         public void BatchPostUpdate(IOrganizationService service, IPluginExecutionContext context, ITracingService tracingService)
         {
 

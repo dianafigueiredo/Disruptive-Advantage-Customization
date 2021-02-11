@@ -31,6 +31,8 @@ namespace Disruptive_Advantage_Customization.Entities
             query_dia_job.LinkCriteria.FilterOperator = LogicalOperator.Or;
             query_dia_job.LinkCriteria.AddCondition("dia_type", ConditionOperator.Equal, 914440003);
             query_dia_job.LinkCriteria.AddCondition("dia_type", ConditionOperator.Equal, 914440001);
+            query_dia_job.LinkCriteria.AddCondition("statuscode", ConditionOperator.Equal, 914440001);
+            query_dia_job.LinkCriteria.AddCondition("statuscode", ConditionOperator.Equal, 914440002);
             var query_dia_job_LinkCriteria_0 = new FilterExpression();
             query_dia_job.LinkCriteria.AddFilter(query_dia_job_LinkCriteria_0);
             // Define filter query_dia_job_LinkCriteria_0
