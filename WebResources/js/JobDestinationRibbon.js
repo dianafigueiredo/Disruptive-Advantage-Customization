@@ -48,8 +48,14 @@ function vesselOnChange(executionContext) {
         }
     }
 }
+function UpdatePostVolume(formContext) {
+    var quantity = formContext.getAttribute("dia_quantity").getValue();
+    formContext.getAttribute("dia_postvolume").setValue(quantity);
+
+}
 function quantityOnChange(executionContext) {
     var formContext = executionContext.getFormContext();
+    UpdatePostVolume(formContext);
     if (formContext.getAttribute("dia_vessel").getValue() != null) {
         var vesselId = formContext.getAttribute("dia_vessel").getValue()[0].id;
         var capacity = 99999;
@@ -483,8 +489,6 @@ function GetNameBatch( formContext, batchId) {
     return batchName;
 
 }
-
-
 function GetNameStage(formContext ,StageId) {
 
     var StageName = "";
