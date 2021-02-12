@@ -284,7 +284,7 @@ function PopulateFields(executionContext) {
         reqVessel.setRequestHeader("Content-Type", "application/json; charset=utf-8");
         reqVessel.onreadystatechange = function () {
             if (this.readyState === 4) {
-                reqDest.onreadystatechange = null;
+                reqVessel.onreadystatechange = null;
                 if (this.status === 200) {
                     var results = JSON.parse(this.response);
                     if (results.value != null) {
@@ -300,6 +300,69 @@ function PopulateFields(executionContext) {
 
                             var batchId = results.value[i]["_dia_batch_value"];
                             var stageId = results.value[i]["_dia_stage_value"];
+
+                            /*var BatchName = GetNameBatch(formContext, batchId);
+                            var StageName = GetNameStage(formContext, stageId);
+
+                            var lookupBatch = new Array();
+                            lookupBatch[0] = new Object();
+                            lookupBatch[0].id = batchId;
+                            lookupBatch[0].name = BatchName;
+                            lookupBatch[0].entityType = "dia_batch";
+
+                            var lookupStage = new Array();
+                            lookupStage[0] = new Object();
+                            lookupStage[0].id = stageId;
+                            lookupStage[0].name = StageName;
+                            lookupStage[0].entityType = "dia_stage";
+
+                            formContext.getAttribute("dia_batch").setValue(lookupBatch);
+                            formContext.getAttribute("dia_stage").setValue(lookupStage);
+                            */
+                        }
+                    }
+                }
+
+            }
+        };
+        reqVessel.send();
+
+        if (formContext.getAttribute("dia_job").getValue() == null) return;
+
+        var jobId = formContext.getAttribute("dia_job").getValue()[0].id;
+
+        var fetchXmlJobSource = [
+            "<fetch top='50'>",
+            "  <entity name='dia_job'>",
+            "    <attribute name='dia_jobid' />",
+            "    <filter>",
+            "      <condition attribute='dia_jobid' operator='eq' value='", jobId, "'/>",
+            "    </filter>",
+            "    <link-entity name='dia_jobsourcevessel' from='dia_job' to='dia_jobid'>",
+            "      <attribute name='dia_jobsourcevesselid' />",
+            "      <attribute name='dia_batch' />",
+            "      <attribute name='dia_stage' />",
+            "    </link-entity>",
+            "  </entity>",
+            "</fetch>",
+        ].join("");
+        var reqJob = new XMLHttpRequest();
+        reqJob.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_jobs?fetchXml=" + encodeURIComponent(fetchXmlJobSource), false);
+        reqJob.setRequestHeader("OData-MaxVersion", "4.0");
+        reqJob.setRequestHeader("OData-Version", "4.0");
+        reqJob.setRequestHeader("Accept", "application/json");
+        reqJob.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        reqJob.onreadystatechange = function () {
+            if (this.readyState === 4) {
+                reqJob.onreadystatechange = null;
+                if (this.status === 200) {
+                    var results = JSON.parse(this.response);
+                    if (results.value != null) {
+                        for (var i = 0; i < results.value.length; i++) {
+
+                            var batchId = results.value[i]["dia_jobsourcevessel1.dia_batch"];
+                            var stageId = results.value[i]["dia_jobsourcevessel1.dia_stage"];
+
                             var BatchName = GetNameBatch(formContext, batchId);
                             var StageName = GetNameStage(formContext, stageId);
 
@@ -317,14 +380,15 @@ function PopulateFields(executionContext) {
 
                             formContext.getAttribute("dia_batch").setValue(lookupBatch);
                             formContext.getAttribute("dia_stage").setValue(lookupStage);
-
+                            
                         }
                     }
                 }
 
             }
         };
-        reqVessel.send();
+        reqJob.send();
+
     }
 
     if (jobtype == 914440002) //Intake 

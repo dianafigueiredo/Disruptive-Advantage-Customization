@@ -71,6 +71,7 @@
     <Compile Include="JobPostUpdate.cs" />
     <Compile Include="JobSourceVesselPostCreate.cs" />
     <Compile Include="JobSourceVesselPostUpdate.cs" />
+    <Compile Include="PostCreateRegionVintageVariety.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

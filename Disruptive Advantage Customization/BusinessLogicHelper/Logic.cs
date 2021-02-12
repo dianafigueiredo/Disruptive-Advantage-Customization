@@ -61,7 +61,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
                 tracingService.Trace("vessel Occupation: " + plannedvesselOccupation);
 
-                //vesselOccupation = vesselEnt.GetAttributeValue<decimal>("dia_occupation");
+                var vesselOccupation = vesselEnt.GetAttributeValue<decimal>("dia_occupation");
                 var vesselCapacity = vesselEnt.GetAttributeValue<decimal>("dia_capacity");
 
                 var JobEntity = jobDestination.GetAttributeValue<EntityReference>("dia_job");
@@ -75,6 +75,10 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                         throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " does not have enough capacity. Max. Capacity: " + Decimal.ToInt32(vesselCapacity) + "L");
                     }
                     if (plannedvesselOccupation != 0 && jobtype.Value != 914440001)
+                    {
+                        throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] + " is not empty");
+                    }
+                    if(vesselOccupation > 0)
                     {
                         throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] + " is not empty");
                     }
@@ -170,7 +174,8 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                             //update statuscode job destination vessel para completed
                             var vesselUpdate = new Entity(destinationVessel.LogicalName);
                             vesselUpdate.Id = destinationVessel.Id;
-                            vesselUpdate.Attributes["statuscode"] = new OptionSetValue(914440001);//Completed
+                            vesselUpdate.Attributes["statecode"] = new OptionSetValue(1); //Inactive
+                            vesselUpdate.Attributes["statuscode"] = new OptionSetValue(914440002);//Completed
                             vesselUpdate.Attributes["dia_postvolume"] = destinationVessel.GetAttributeValue<decimal>("dia_quantity") + destinationVessel.GetAttributeValue<decimal>("dia_prevolume");
                             service.Update(vesselUpdate);
                         }
@@ -209,7 +214,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                             #region Update jobdestinationvessel statuscode and postvolume
                             var vesselUpdate = new Entity(jobdestinationvessel.LogicalName);
                             vesselUpdate.Id = jobdestinationvessel.Id;
-                            vesselUpdate.Attributes["statuscode"] = new OptionSetValue(914440001);//Completeds
+                            vesselUpdate.Attributes["statuscode"] = new OptionSetValue(914440002);//Completeds
                             vesselUpdate.Attributes["dia_postvolume"] = jobdestinationvessel.GetAttributeValue<decimal>("dia_quantity") + jobdestinationvessel.GetAttributeValue<decimal>("dia_prevolume");
                             service.Update(vesselUpdate);
                             #endregion
@@ -247,7 +252,8 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                             }
                             var jobSourceVesselUpdate = new Entity(sourceVessel.LogicalName);
                             jobSourceVesselUpdate.Id = sourceVessel.Id;
-                            jobSourceVesselUpdate.Attributes["statuscode"] = new OptionSetValue(914440001);//Completed
+                            jobSourceVesselUpdate.Attributes["statuscode"] = new OptionSetValue(914440002);//Completed
+                            jobSourceVesselUpdate.Attributes["statecode"] = new OptionSetValue(1); //Inactive
                             service.Update(jobSourceVesselUpdate);
                         }
 
@@ -442,6 +448,31 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
 
             }
+
+
+        }
+
+        public void PostCreateRegionVintageVariety(IOrganizationService service, IPluginExecutionContext context, ITracingService tracingService)
+        {
+            
+            Entity target = (Entity)context.InputParameters["Target"];
+
+            var entityName = context.PrimaryEntityName;
+            var fieldName = "";
+
+            if(entityName == "dia_variety") fieldName = "dia_varietypercentage";
+            else if (entityName == "dia_vintage")   fieldName = "dia_vintagepercentage";
+            else if (entityName == "dia_region")    fieldName = "dia_regionpercentage";
+            
+            //updateBatchCompositionDetail(service, tracingService, fieldName, target);
+
+        }
+        public void updateBatchCompositionDetail(IOrganizationService service, ITracingService tracingService, string fieldName, Entity target)
+        {
+            var targetPercentage = target.GetAttributeValue<decimal>(fieldName);
+
+            var batchCompositionPercentage = target.GetAttributeValue<EntityReference>("dia_batchcompositiondetail");
+
 
 
         }
