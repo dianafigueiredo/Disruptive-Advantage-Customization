@@ -164,11 +164,12 @@ function PopulateFields(executionContext) {
     if (formContext.getAttribute("dia_job").getValue() == null) return; 
     var jobId = formContext.getAttribute("dia_job").getValue()[0].id;
     var jobtype = 0;
-
+    var scheduledStart = new Date();
     var fetchXml = [
         "<fetch>",
         "  <entity name='dia_job'>",
         "    <attribute name='dia_type' />",
+        "    <attribute name='dia_schelduledstart' />",
         "    <filter>",
         "      <condition attribute='dia_jobid' operator='eq' value='", jobId, "'/>",
         "    </filter>",
@@ -190,6 +191,7 @@ function PopulateFields(executionContext) {
                 if (results.value != null) {
                     for (var i = 0; i < results.value.length; i++) {
                         jobtype = results.value[i]["dia_type"];
+                        scheduledStart = results.value[i]["dia_schelduledstart"];
                     }
                 }
             }
@@ -204,22 +206,33 @@ function PopulateFields(executionContext) {
 
         var vesselId = formContext.getAttribute("dia_vessel").getValue()[0].id;
 
-        var fetchXmlVessel = [
-            "<fetch>",
-            "  <entity name='dia_vessel'>",
-            "    <attribute name='dia_occupation' />",
+        var fetchXml = [
+            "<fetch top='1'>",
+            "  <entity name='dia_jobdestinationvessel'>",
+            "    <attribute name='dia_vessel' />",
+            "    <attribute name='dia_quantity' />",
             "    <attribute name='dia_batch' />",
-            "    <attribute name='dia_batchname' />",
             "    <attribute name='dia_stage' />",
             "    <filter>",
-            "      <condition attribute='dia_vesselid' operator='eq' value='", vesselId, "'/>",
+            "      <condition attribute='dia_vessel' operator='eq' value='", vesselId, "'/>",
+            "      <condition attribute='statecode' operator='eq' value='", 0, "'/>",
             "    </filter>",
+            "    <link-entity name='dia_job' from='dia_jobid' to='dia_job'>",
+            "      <attribute name='dia_type' />",
+            "      <filter type='or'>",
+            //"        <condition attribute='dia_type' operator='eq' value='", 914440003, "'/>",
+            "        <condition attribute='dia_type' operator='eq' value='", 914440002, "'/>",
+            "      </filter>",
+            "      <filter type='and'>",
+            "        <condition attribute='dia_schelduledstart' operator='le' value='", scheduledStart, "'/>",
+            "      </filter>",
+            "    </link-entity>",
             "  </entity>",
             "</fetch>",
         ].join("");
 
         var reqVessel = new XMLHttpRequest();
-        reqVessel.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_vessels?fetchXml=" + encodeURIComponent(fetchXmlVessel), false);
+        reqVessel.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_jobdestinationvessels?fetchXml=" + encodeURIComponent(fetchXml), false);
         reqVessel.setRequestHeader("OData-MaxVersion", "4.0");
         reqVessel.setRequestHeader("OData-Version", "4.0");
         reqVessel.setRequestHeader("Accept", "application/json");
@@ -231,7 +244,7 @@ function PopulateFields(executionContext) {
                     var results = JSON.parse(this.response);
                     if (results.value != null) {
                         for (var i = 0; i < results.value.length; i++) {
-                            var occupation = results.value[i]["dia_occupation"];
+                            var occupation = results.value[i]["dia_quantity"];
                             var batchId = results.value[i]["_dia_batch_value"];
                             var stageId = results.value[i]["_dia_stage_value"];
                             var BatchName = GetNameBatch(formContext,batchId);
@@ -296,6 +309,7 @@ function PopulateFields(executionContext) {
                     if (results.value != null) {
                         for (var i = 0; i < results.value.length; i++) {
                             var occupation = results.value[i]["dia_occupation"];
+                            if (occupation == null) occupation = 0;
                             var prevolume = formContext.getAttribute("dia_prevolume").getValue();
                             var quantity = formContext.getAttribute("dia_quantity").getValue();
                             var sum = 0;

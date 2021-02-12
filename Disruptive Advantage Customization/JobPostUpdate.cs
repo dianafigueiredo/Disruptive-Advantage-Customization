@@ -17,7 +17,9 @@ namespace Disruptive_Advantage_Customization
                 if (context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
                 {
                     var logic = new Logic();
-                    logic.JobPostUpdate(service, context, tracingService);
+                    logic.JobPostUpdateCompleted(service, context, tracingService); //Update job status to Completed
+                    tracingService.Trace("Finished Post Update");
+                    logic.JobPostUpdateStarted(service, context, tracingService);//Update job status to In Progress
                 }
             }
             catch (Exception ex)
