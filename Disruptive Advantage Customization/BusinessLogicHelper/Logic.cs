@@ -78,7 +78,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     {
                         throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] + " is not empty");
                     }
-                    if(vesselOccupation > 0)
+                    if(vesselOccupation > 0 && jobtype.Value != 914440001)
                     {
                         throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] + " is not empty");
                     }
