@@ -415,24 +415,25 @@ function PopulateFields(executionContext) {
     {
         if (formContext.getAttribute("dia_job").getValue() == null) return;
         
-        var JobId = formContext.getAttribute("dia_job").getValue()[0].id;
+        var JobDestinationVesselId = formContext.getAttribute("dia_jobdestinationvessel").getValue()[0].id;
 
 
         var fetchXmlJob = [
             "<fetch>",
-            "  <entity name='dia_job'>",
+            "  <entity name='dia_jobdestinationvessel'>",
             "    <attribute name='dia_quantity' />",
             "    <filter>",
-            "      <condition attribute='dia_jobid' operator='eq' value='", JobId, "'/>",
+            "      <condition attribute='dia_jobdestinationvesselid' operator='eq' value='", JobDestinationVesselId, "'/>",
             "    </filter>",
             "  </entity>",
             "</fetch>",
+
         ].join("");
 
       
 
         var reqjob = new XMLHttpRequest();
-        reqjob.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_jobs?fetchXml=" + encodeURIComponent(fetchXmlJob), false);
+        reqjob.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_jobdestinationvessels?fetchXml=" + encodeURIComponent(fetchXmlJob), false);
         reqjob.setRequestHeader("OData-MaxVersion", "4.0");
         reqjob.setRequestHeader("OData-Version", "4.0");
         reqjob.setRequestHeader("Accept", "application/json");
@@ -445,9 +446,8 @@ function PopulateFields(executionContext) {
                     if (results.value != null) {
                         for (var i = 0; i < results.value.length; i++) {
                             var quantityjob = results.value[i]["dia_quantity"];
+                            
                             var prevolume = formContext.getAttribute("dia_prevolume").getValue();
-                        
-
                             var sum = 0;
                             sum = Number(quantityjob);
                             formContext.getAttribute("dia_prevolume").setValue(0);
