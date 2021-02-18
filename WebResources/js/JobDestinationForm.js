@@ -1,6 +1,7 @@
 function onLoad(executionContext) {
     var formContext = executionContext.getFormContext();
     formDestination(executionContext);
+    formContext.getAttribute("dia_vessel").addOnChange(BlendChange);
 }
 
 function formDestination(executionContext) {
@@ -43,14 +44,29 @@ function formDestination(executionContext) {
         }
     };
     req.send();
-    if (jobType == 914440000) {
-
+    if (jobType == 914440000)
+    {
         formContext.ui.controls.get('dia_quantity').setVisible(false);
     }
-
-    else {
-        
+    else
+    {
         formContext.ui.controls.get('dia_quantity').setVisible(true);
     }
+}
 
+function BlendChange(executionContext)
+{
+    var formContext = executionContext.getFormContext();
+    var blend = formContext.getAttribute("dia_blend").getValue();
+    var prevolume = formContext.getAttribute("dia_prevolume").getValue();
+
+    if (prevolume > 0) {
+
+        formContext.getAttribute("dia_blend").setValue(true);
+
+    } else if (prevolume <= 0) {
+
+        formContext.getAttribute("dia_blend").setValue(false);
+
+    }
 }

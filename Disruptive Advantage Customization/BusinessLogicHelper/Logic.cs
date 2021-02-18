@@ -94,25 +94,6 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
 
                 #endregion
-
-                #region Update Blend
-
-                var prevolume = jobDestination.GetAttributeValue<decimal>("dia_prevolume");
-
-
-                if (jobtype != null && jobtype.Value == 914440001 && prevolume > 0) //transfer
-                {
-                    jobDestination.Attributes["dia_blend"] = true;
-                }
-                else if (prevolume <= 0)
-                {
-
-                    jobDestination.Attributes["dia_blend"] = false;
-
-                }
-
-
-                #endregion 
             }
         }
         public void JobSourceVesselPostCreate(IOrganizationService service, IPluginExecutionContext context, ITracingService tracingService)
@@ -205,7 +186,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                                 var sourceVesselUpdate = new Entity(vesselInformation.LogicalName);
                                 sourceVesselUpdate.Id = vesselInformation.Id;
                                 sourceVesselUpdate.Attributes["dia_occupation"] = vesselInformation.GetAttributeValue<decimal>("dia_occupation") + destinationVessel.GetAttributeValue<decimal>("dia_quantity"); // ocupação do vessel + quantity do job destination vessel.
-                                sourceVesselUpdate.Attributes["dia_batch"] = jobInformation != null ? jobInformation.GetAttributeValue<EntityReference>("dia_batch") : null;
+                                sourceVesselUpdate.Attributes["dia_batch"] = destinationVessel != null ? destinationVessel.GetAttributeValue<EntityReference>("dia_batch") : null;
                                 sourceVesselUpdate.Attributes["dia_composition"] = batchComposition != null ? batchComposition.GetAttributeValue<EntityReference>("dia_batchcomposition") : null; //Composition que vem do batch     
                                 sourceVesselUpdate.Attributes["dia_stage"] = stage;
 
@@ -220,6 +201,15 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                             vesselUpdate.Attributes["statecode"] = new OptionSetValue(1); //Inactive
                             vesselUpdate.Attributes["statuscode"] = new OptionSetValue(914440002);//Completed
                             vesselUpdate.Attributes["dia_postvolume"] = destinationVessel.GetAttributeValue<decimal>("dia_quantity") + destinationVessel.GetAttributeValue<decimal>("dia_prevolume");
+                            service.Update(vesselUpdate);
+
+                            //update vessel batch
+
+                            var BatchVesselUpdate = new Entity(destinationVessel.LogicalName);
+                            BatchVesselUpdate.Id = destinationVessel.Id;
+                            BatchVesselUpdate.Attributes["dia_batch"] = jobInformation.GetAttributeValue<EntityReference>("dia_batch");
+
+
                             service.Update(vesselUpdate);
                         }
                     }
