@@ -205,33 +205,47 @@ function PopulateFields(executionContext) {
 
         var vesselId = formContext.getAttribute("dia_vessel").getValue()[0].id;
 
+        /* var fetchXml = [
+             "<fetch top='1'>",
+             "  <entity name='dia_jobdestinationvessel'>",
+             "    <attribute name='dia_vessel' />",
+             "    <attribute name='dia_quantity' />",
+             "    <attribute name='dia_batch' />",
+             "    <attribute name='dia_stage' />",
+             "    <filter>",
+             "      <condition attribute='dia_vessel' operator='eq' value='", vesselId, "'/>",
+             "      <condition attribute='statecode' operator='eq' value='", 0, "'/>",
+             "    </filter>",
+             "    <link-entity name='dia_job' from='dia_jobid' to='dia_job'>",
+             "      <attribute name='dia_type' />",
+             "      <filter type='or'>",
+             //"        <condition attribute='dia_type' operator='eq' value='", 914440003, "'/>",
+             "        <condition attribute='dia_type' operator='eq' value='", 914440002, "'/>",
+             "      </filter>",
+             "      <filter type='and'>",
+             "        <condition attribute='dia_schelduledstart' operator='le' value='", scheduledStart, "'/>",
+             "      </filter>",
+             "    </link-entity>",
+             "  </entity>",
+             "</fetch>",
+         ].join("");*/
+
         var fetchXml = [
-            "<fetch top='1'>",
-            "  <entity name='dia_jobdestinationvessel'>",
-            "    <attribute name='dia_vessel' />",
-            "    <attribute name='dia_quantity' />",
+            "<fetch>",
+            "  <entity name='dia_vessel'>",
+            "    <attribute name='dia_occupation' />",
             "    <attribute name='dia_batch' />",
+            "    <attribute name='dia_batchname' />",
             "    <attribute name='dia_stage' />",
             "    <filter>",
-            "      <condition attribute='dia_vessel' operator='eq' value='", vesselId, "'/>",
-            "      <condition attribute='statecode' operator='eq' value='", 0, "'/>",
+            "      <condition attribute='dia_vesselid' operator='eq' value='", vesselId, "'/>",
             "    </filter>",
-            "    <link-entity name='dia_job' from='dia_jobid' to='dia_job'>",
-            "      <attribute name='dia_type' />",
-            "      <filter type='or'>",
-            //"        <condition attribute='dia_type' operator='eq' value='", 914440003, "'/>",
-            "        <condition attribute='dia_type' operator='eq' value='", 914440002, "'/>",
-            "      </filter>",
-            "      <filter type='and'>",
-            "        <condition attribute='dia_schelduledstart' operator='le' value='", scheduledStart, "'/>",
-            "      </filter>",
-            "    </link-entity>",
             "  </entity>",
             "</fetch>",
         ].join("");
 
         var reqVessel = new XMLHttpRequest();
-        reqVessel.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_jobdestinationvessels?fetchXml=" + encodeURIComponent(fetchXml), false);
+        reqVessel.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_vessels?fetchXml=" + encodeURIComponent(fetchXml), false);
         reqVessel.setRequestHeader("OData-MaxVersion", "4.0");
         reqVessel.setRequestHeader("OData-Version", "4.0");
         reqVessel.setRequestHeader("Accept", "application/json");
@@ -275,9 +289,11 @@ function PopulateFields(executionContext) {
     }
     if (jobtype == 914440001) //Transfer
     {
-
+        var globalOccupation = 0;
+        var lookupBatch = new Array();
+        lookupBatch[0] = new Object();
         if (formContext.getAttribute("dia_vessel").getValue() == null) return;
-
+        
         var vesselId = formContext.getAttribute("dia_vessel").getValue()[0].id;
 
         var fetchXmlVessel = [
@@ -308,6 +324,7 @@ function PopulateFields(executionContext) {
                     if (results.value != null) {
                         for (var i = 0; i < results.value.length; i++) {
                             var occupation = results.value[i]["dia_occupation"];
+                            globalOccupation = results.value[i]["dia_occupation"];
                             if (occupation == null) occupation = 0;
                             var prevolume = formContext.getAttribute("dia_prevolume").getValue();
                             var quantity = formContext.getAttribute("dia_quantity").getValue();
@@ -319,7 +336,12 @@ function PopulateFields(executionContext) {
 
                             var batchId = results.value[i]["_dia_batch_value"];
                             var stageId = results.value[i]["_dia_stage_value"];
+                            var BatchName = GetNameBatch(formContext, batchId);
 
+
+                            lookupBatch[0].id = batchId;
+                            lookupBatch[0].name = BatchName;
+                            lookupBatch[0].entityType = "dia_batch";
                             /*var BatchName = GetNameBatch(formContext, batchId);
                             var StageName = GetNameStage(formContext, stageId);
 
@@ -361,6 +383,7 @@ function PopulateFields(executionContext) {
             "      <attribute name='dia_jobsourcevesselid' />",
             "      <attribute name='dia_batch' />",
             "      <attribute name='dia_stage' />",
+            "      <attribute name='dia_quantity' />",
             "    </link-entity>",
             "  </entity>",
             "</fetch>",
@@ -385,11 +408,11 @@ function PopulateFields(executionContext) {
                             var BatchName = GetNameBatch(formContext, batchId);
                             var StageName = GetNameStage(formContext, stageId);
 
-                            var lookupBatch = new Array();
-                            lookupBatch[0] = new Object();
-                            lookupBatch[0].id = batchId;
-                            lookupBatch[0].name = BatchName;
-                            lookupBatch[0].entityType = "dia_batch";
+                            var lookupBatchSource = new Array();
+                            lookupBatchSource[0] = new Object();
+                            lookupBatchSource[0].id = batchId;
+                            lookupBatchSource[0].name = BatchName;
+                            lookupBatchSource[0].entityType = "dia_batch";
 
                             var lookupStage = new Array();
                             lookupStage[0] = new Object();
@@ -397,9 +420,13 @@ function PopulateFields(executionContext) {
                             lookupStage[0].name = StageName;
                             lookupStage[0].entityType = "dia_stage";
 
-                            formContext.getAttribute("dia_batch").setValue(lookupBatch);
+                            
                             formContext.getAttribute("dia_stage").setValue(lookupStage);
 
+                            if (results.value[i]["dia_jobsourcevessel1.dia_quantity"] < globalOccupation) {
+                                formContext.getAttribute("dia_batch").setValue(lookupBatch);
+                            }
+                            else formContext.getAttribute("dia_batch").setValue(lookupBatchSource);
                         }
                     }
                 }
