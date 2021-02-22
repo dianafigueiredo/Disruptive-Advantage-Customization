@@ -100,8 +100,7 @@ function quantityOnChange(executionContext) {
     VerifyRemainingCapacity(formContext);
 }
 
-function VerifyRemainingCapacity(formContext)
-{
+function VerifyRemainingCapacity(formContext) {
     if (formContext.getAttribute("dia_job").getValue() != null) {
         var jobId = formContext.getAttribute("dia_job").getValue()[0].id;
         var allocatedCapacity = 0;
@@ -161,7 +160,7 @@ function VerifyRemainingCapacity(formContext)
 
 function PopulateFields(executionContext) {
     var formContext = executionContext.getFormContext();
-    if (formContext.getAttribute("dia_job").getValue() == null) return; 
+    if (formContext.getAttribute("dia_job").getValue() == null) return;
     var jobId = formContext.getAttribute("dia_job").getValue()[0].id;
     var jobtype = 0;
     var scheduledStart = new Date();
@@ -200,7 +199,7 @@ function PopulateFields(executionContext) {
     };
     reqDest.send();
 
-    if (jobtype == 914440000 ) { //In-Situ
+    if (jobtype == 914440000) { //In-Situ
 
         if (formContext.getAttribute("dia_vessel").getValue() == null) return;
 
@@ -247,8 +246,8 @@ function PopulateFields(executionContext) {
                             var occupation = results.value[i]["dia_quantity"];
                             var batchId = results.value[i]["_dia_batch_value"];
                             var stageId = results.value[i]["_dia_stage_value"];
-                            var BatchName = GetNameBatch(formContext,batchId);
-                            var StageName = GetNameStage(formContext,stageId);
+                            var BatchName = GetNameBatch(formContext, batchId);
+                            var StageName = GetNameStage(formContext, stageId);
 
 
                             var lookupBatch = new Array();
@@ -400,7 +399,7 @@ function PopulateFields(executionContext) {
 
                             formContext.getAttribute("dia_batch").setValue(lookupBatch);
                             formContext.getAttribute("dia_stage").setValue(lookupStage);
-                            
+
                         }
                     }
                 }
@@ -414,56 +413,60 @@ function PopulateFields(executionContext) {
     if (jobtype == 914440002) //Intake 
     {
         if (formContext.getAttribute("dia_job").getValue() == null) return;
-        
-        var JobDestinationVesselId = formContext.getAttribute("dia_jobdestinationvessel").getValue()[0].id;
+
+        var JobId = formContext.getAttribute("dia_job").getValue()[0].id;
+
+        if (formContext.ui.getFormType() == 1) {
+            var fetchXmlJob = [
+                "<fetch>",
+                "  <entity name='dia_job'>",
+                "    <attribute name='dia_quantity' />",
+                "    <filter>",
+                "      <condition attribute='dia_jobid' operator='eq' value='", JobId, "'/>",
+                "    </filter>",
+                "  </entity>",
+                "</fetch>",
+            ].join("");
+
+            var reqjob = new XMLHttpRequest();
+            reqjob.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_jobs?fetchXml=" + encodeURIComponent(fetchXmlJob), false);
+            reqjob.setRequestHeader("OData-MaxVersion", "4.0");
+            reqjob.setRequestHeader("OData-Version", "4.0");
+            reqjob.setRequestHeader("Accept", "application/json");
+            reqjob.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+            reqjob.onreadystatechange = function () {
+                if (this.readyState === 4) {
+                    reqjob.onreadystatechange = null;
+                    if (this.status === 200) {
+                        var results = JSON.parse(this.response);
+                        if (results.value != null) {
+                            for (var i = 0; i < results.value.length; i++) {
+                                var quantityjob = results.value[i]["dia_quantity"];
+                                var prevolume = formContext.getAttribute("dia_prevolume").getValue();
 
 
-        var fetchXmlJob = [
-            "<fetch>",
-            "  <entity name='dia_jobdestinationvessel'>",
-            "    <attribute name='dia_quantity' />",
-            "    <filter>",
-            "      <condition attribute='dia_jobdestinationvesselid' operator='eq' value='", JobDestinationVesselId, "'/>",
-            "    </filter>",
-            "  </entity>",
-            "</fetch>",
+                                var sum = 0;
+                                sum = Number(quantityjob);
+                                formContext.getAttribute("dia_prevolume").setValue(0);
+                                formContext.getAttribute("dia_postvolume").setValue(sum);
 
-        ].join("");
-
-      
-
-        var reqjob = new XMLHttpRequest();
-        reqjob.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_jobdestinationvessels?fetchXml=" + encodeURIComponent(fetchXmlJob), false);
-        reqjob.setRequestHeader("OData-MaxVersion", "4.0");
-        reqjob.setRequestHeader("OData-Version", "4.0");
-        reqjob.setRequestHeader("Accept", "application/json");
-        reqjob.setRequestHeader("Content-Type", "application/json; charset=utf-8");
-        reqjob.onreadystatechange = function () {
-            if (this.readyState === 4) {
-                reqjob.onreadystatechange = null;
-                if (this.status === 200) {
-                    var results = JSON.parse(this.response);
-                    if (results.value != null) {
-                        for (var i = 0; i < results.value.length; i++) {
-                            var quantityjob = results.value[i]["dia_quantity"];
-                            
-                            var prevolume = formContext.getAttribute("dia_prevolume").getValue();
-                            var sum = 0;
-                            sum = Number(quantityjob);
-                            formContext.getAttribute("dia_prevolume").setValue(0);
-                            formContext.getAttribute("dia_postvolume").setValue(sum);
-
+                            }
                         }
                     }
-                }
 
-            }
-        };
-        reqjob.send();
+                }
+            };
+            reqjob.send();
+        }
+        else {
+            var quantity = formContext.getAttribute("dia_quantity").getValue();
+            formContext.getAttribute("dia_postvolume").setValue(quantity);
+        }
+
     }
 }
 
-function GetNameBatch( formContext, batchId) {
+function GetNameBatch(formContext, batchId) {
 
     var batchName = "";
 
@@ -503,7 +506,7 @@ function GetNameBatch( formContext, batchId) {
     return batchName;
 
 }
-function GetNameStage(formContext ,StageId) {
+function GetNameStage(formContext, StageId) {
 
     var StageName = "";
 
