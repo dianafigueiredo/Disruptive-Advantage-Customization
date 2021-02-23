@@ -17,19 +17,24 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                 var jobEnt = service.Retrieve(jobRef.LogicalName, jobRef.Id, new ColumnSet("dia_schelduledstart", "dia_quantity", "dia_type"));
 
                 #region JobsToFill
-
+                tracingService.Trace("1");
                 var JobDestinationLogic = new JobDestinationEntity();
+
                 var vesselFills = JobDestinationLogic.GetDestinationVesselQuantity(service, jobDestination, destVessel, jobEnt);
 
-                var logiHelper = new LogicHelper();
-                var qtdFill = logiHelper.SumOfQuantities(vesselFills, "dia_quantity");
+                tracingService.Trace("2");
 
+                var logiHelper = new LogicHelper();
+                var qtdFill = logiHelper.SumOfQuantities(vesselFills, "dia_quantity", tracingService);
+
+                tracingService.Trace("3");
                 #endregion JobsToFill
 
                 #region JobsToEmpty
 
                 var vessEmpty = JobDestinationLogic.GetSourceVesselQuantity(service, jobDestination, destVessel, jobEnt);
-                var qtdDrop = logiHelper.SumOfQuantities(vessEmpty, "dia_quantity");
+                var qtdDrop = logiHelper.SumOfQuantities(vessEmpty, "dia_quantity", tracingService);
+                tracingService.Trace("4");
 
                 #endregion JobsToEmpty
 
@@ -38,6 +43,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                 var capVessel = vesselEnt.GetAttributeValue<decimal>("dia_capacity");
                 var qtdJobDestVessel = jobDestination.GetAttributeValue<decimal>("dia_quantity");
 
+                tracingService.Trace("5");
 
                 var finalOccupation = logiHelper.FinalOccupation(capVessel, occVessel, qtdJobDestVessel, qtdFill, qtdDrop);
 
@@ -86,7 +92,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
                 if (jobtype != null && jobtype.Value == 914440000 || jobtype.Value == 914440003) //In-Situ && Dispatch
                 { //if job type in-situ or dispatch +
-                    if (plannedvesselOccupation <= 0)
+                    if (plannedvesselOccupation <= 0 && vesselOccupation <= 0)
                     {
                         throw new InvalidPluginExecutionException("The vessel" + vesselEnt["dia_name"] + "at this date " + jobEnt["dia_schelduledstart"] + " is empty");
                     }
@@ -112,7 +118,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     var resultsquery = JobSourceLogic.GetJobSourceVessel(service, jobRef);
 
                     var logiHelper = new LogicHelper();
-                    sumQuantity = logiHelper.SumOfQuantities(resultsquery, "dia_quantity");
+                    sumQuantity = logiHelper.SumOfQuantities(resultsquery, "dia_quantity", tracingService);
 
                     var jobUpdate = new Entity(jobRef.LogicalName, jobRef.Id);
                     jobUpdate.Attributes["dia_quantity"] = sumQuantity;
@@ -451,7 +457,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
         public void CreateTransaction(IOrganizationService service, ITracingService tracingService, Entity vesselInformation, Entity jobInformation, Entity destinationVessel, EntityReference stage, Entity job)
         {
-            var createTransaction = new Entity("dia_vess elstocktransactions");
+            var createTransaction = new Entity("dia_vesselstocktransactions");
             createTransaction.Attributes["dia_location"] = vesselInformation.Contains("dia_location") == true ? vesselInformation.GetAttributeValue<EntityReference>("dia_location") : null;
             createTransaction.Attributes["dia_batch"] = jobInformation != null ? jobInformation.GetAttributeValue<EntityReference>("dia_batch") : null;
             createTransaction.Attributes["dia_vessel"] = destinationVessel.GetAttributeValue<EntityReference>("dia_vessel");
@@ -486,8 +492,6 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     JobQuantityUpdate.Attributes["dia_quantity"] = finalQuantity + quantityJob;
                     service.Update(JobQuantityUpdate);
                 }
-
-
 
             }
 

@@ -15,12 +15,14 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
         /// <param name="dataCollection">EntityCollection</param>
         /// <param name="fieldName">AttributName</param>
         /// <returns>SUM of a collumn</returns>
-        public decimal? SumOfQuantities(EntityCollection dataCollection, string fieldName)
+        public decimal? SumOfQuantities(EntityCollection dataCollection, string fieldName, ITracingService tracingService)
         {
-            var result = 0m;
+            tracingService.Trace("SumOfQuantities: " + dataCollection.Entities.Count);
+            decimal? result = 0m;
+
             foreach (var item in dataCollection.Entities)
             {
-                result += (decimal)item[fieldName];
+                result += (decimal?)item[fieldName];
             }
             return result;
         }

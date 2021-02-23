@@ -4,9 +4,26 @@ function OnLoad(executionContext)
 	
 	formContext.getAttribute("dia_type").addOnChange(jobTypeOnChange);
 	formContext.getAttribute("dia_schelduledstart").addOnChange(startDateOnChange);
+	formContext.getAttribute("dia_schelduledfinish").addOnChange(endDateLimit);
 	
 	jobTypeOnChange(executionContext);
 	QuantityLeft(executionContext);
+}
+function endDateLimit(executionContext) {
+	var formContext = executionContext.getFormContext();
+	if (formContext.getAttribute("dia_schelduledfinish").getValue() != null) {
+		var endDate = formContext.getAttribute("dia_schelduledfinish").getValue();
+		var startDate = formContext.getAttribute("dia_schelduledstart").getValue();
+
+		if (endDate.getTime() < Date.now() || (startDate != null && startDate.getTime() > endDate.getTime())) {
+
+			formContext.getControl("dia_schelduledfinish").setNotification("Invalid date");
+			//formContext.getAttribute("dia_schelduledfinish").setValue();
+		}
+		else formContext.getControl("dia_schelduledfinish").clearNotification();
+	}
+
+
 }
 function QuantityLeft(executionContext) {
 	var formContext = executionContext.getFormContext();
@@ -107,6 +124,7 @@ function setRequiredLevelControl(formContext, controlName, level){
 
 function startDateOnChange(executionContext) {
 	var formContext = executionContext.getFormContext();
+	endDateLimit(executionContext);
 	var endDateValue = formContext.getAttribute("dia_schelduledfinish").getValue();
 	
 	if(!endDateValue){
@@ -126,33 +144,41 @@ function jobTypeOnChange(executionContext) {
     if(intake == 914440000){ //InSitu
         setVisibleControl(formContext, "dia_batch", false);
 		setVisibleControl(formContext, "SourceVessel", false);
-		setVisibleControl(formContext, "DestinationVessel", true);
+		setVisibleControl(formContext, "DestinationVessel", false);
+		setVisibleControl(formContext, "JobDestinationVessel", true);
 		setVisibleControl(formContext, "dia_quantity", false);
 		setRequiredLevelControl(formContext, "dia_additive", "required");
 		//setRequiredLevelControl(formContext, "dia_quantity", "required");
+		
     }
     else if(intake == 914440001){ //Transfer
         setVisibleControl(formContext, "dia_batch", false);
 		setVisibleControl(formContext, "SourceVessel", true);
 		setVisibleControl(formContext, "DestinationVessel", true);
+		setVisibleControl(formContext, "JobDestinationVessel", false);
 		setVisibleControl(formContext, "dia_quantity", true);
 		setRequiredLevelControl(formContext, "dia_additive", "none");
 		//setRequiredLevelControl(formContext, "dia_quantity", "required");
+		
     }
 	else if(intake == 914440002){ //Intake
         setVisibleControl(formContext, "dia_batch", true);
 		setVisibleControl(formContext, "SourceVessel", false);
 		setVisibleControl(formContext, "DestinationVessel", true);
+		setVisibleControl(formContext, "JobDestinationVessel", false);
 		setRequiredLevelControl(formContext, "dia_additive", "none");
 		setRequiredLevelControl(formContext, "dia_quantity", "required");
 		formContext.getControl("dia_quantity").setDisabled(false);
+		
     }
 	else if(intake == 914440003){ //Dispatch
         setVisibleControl(formContext, "dia_batch", false);
 		setVisibleControl(formContext, "SourceVessel", true);
 		setVisibleControl(formContext, "DestinationVessel", false);
+		setVisibleControl(formContext, "JobDestinationVessel", false);
 		setRequiredLevelControl(formContext, "dia_additive", "none");
 		setRequiredLevelControl(formContext, "dia_quantity", "required");
+		
     }
 }
 

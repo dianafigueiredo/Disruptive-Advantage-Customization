@@ -47,12 +47,18 @@ function formDestination(executionContext) {
     if (jobType == 914440000)
     {
         formContext.ui.controls.get('dia_quantity').setVisible(false);
+      
     }
     else
     {
         formContext.ui.controls.get('dia_quantity').setVisible(true);
+        
     }
 }
+
+
+
+
 
 function BlendChange(executionContext)
 {
