@@ -238,15 +238,15 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                             var stage = jobdestinationvessel.GetAttributeValue<EntityReference>("dia_stage") == null ? null : jobdestinationvessel.GetAttributeValue<EntityReference>("dia_stage");
 
                             EntityCollection resultsQuantitySourceVessel = JobLogic.GetSourceQuantity(service, targetEntity);
-                            var finalBatch = GetHighestQuantityBatch(service, resultsQuantitySourceVessel, jobdestinationvessel);
+                            //var finalBatch = GetHighestQuantityBatch(service, resultsQuantitySourceVessel, jobdestinationvessel);
 
                             var destinationVesselUpdate = new Entity(vesselInformation.LogicalName);
                             destinationVesselUpdate.Id = vesselInformation.Id;
                             destinationVesselUpdate.Attributes["dia_occupation"] = jobdestinationvessel.GetAttributeValue<decimal>("dia_quantity") + vesselInformation.GetAttributeValue<decimal>("dia_occupation");
                             //destinationVesselUpdate.Attributes["dia_batch"] = jobInformation != null ? jobInformation.GetAttributeValue<EntityReference>("dia_batch") : null;
                             tracingService.Trace("batch: " + jobdestinationvessel.GetAttributeValue<EntityReference>("dia_batch"));
-                            //destinationVesselUpdate.Attributes["dia_batch"] = jobdestinationvessel != null ? jobdestinationvessel.GetAttributeValue<EntityReference>("dia_batch") : null;
-                            destinationVesselUpdate.Attributes["dia_batch"] = finalBatch;
+                            destinationVesselUpdate.Attributes["dia_batch"] = jobdestinationvessel != null ? jobdestinationvessel.GetAttributeValue<EntityReference>("dia_batch") : null;
+                            //destinationVesselUpdate.Attributes["dia_batch"] = finalBatch;
                             destinationVesselUpdate.Attributes["dia_composition"] = batchComposition != null ? batchComposition.GetAttributeValue<EntityReference>("dia_batchcomposition") : null;
                             destinationVesselUpdate.Attributes["dia_stage"] = stage;
 
