@@ -68,6 +68,7 @@
     <Compile Include="Entities\JobEntity.cs" />
     <Compile Include="Entities\JobSourceEntity.cs" />
     <Compile Include="JobDestinationVesselPreCreate.cs" />
+    <Compile Include="JobPostCreate.cs" />
     <Compile Include="JobPostUpdate.cs" />
     <Compile Include="JobSourceVesselPostCreate.cs" />
     <Compile Include="JobSourceVesselPostUpdate.cs" />

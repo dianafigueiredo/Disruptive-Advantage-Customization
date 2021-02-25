@@ -201,34 +201,11 @@ function PopulateFields(executionContext) {
 
     if (jobtype == 914440000) { //In-Situ
 
-        if (formContext.getAttribute("dia_vessel").getValue() == null) return;
+        if (formContext.getAttribute("dia_vessel").getValue() == null ) return;
 
         var vesselId = formContext.getAttribute("dia_vessel").getValue()[0].id;
 
-        /* var fetchXml = [
-             "<fetch top='1'>",
-             "  <entity name='dia_jobdestinationvessel'>",
-             "    <attribute name='dia_vessel' />",
-             "    <attribute name='dia_quantity' />",
-             "    <attribute name='dia_batch' />",
-             "    <attribute name='dia_stage' />",
-             "    <filter>",
-             "      <condition attribute='dia_vessel' operator='eq' value='", vesselId, "'/>",
-             "      <condition attribute='statecode' operator='eq' value='", 0, "'/>",
-             "    </filter>",
-             "    <link-entity name='dia_job' from='dia_jobid' to='dia_job'>",
-             "      <attribute name='dia_type' />",
-             "      <filter type='or'>",
-             //"        <condition attribute='dia_type' operator='eq' value='", 914440003, "'/>",
-             "        <condition attribute='dia_type' operator='eq' value='", 914440002, "'/>",
-             "      </filter>",
-             "      <filter type='and'>",
-             "        <condition attribute='dia_schelduledstart' operator='le' value='", scheduledStart, "'/>",
-             "      </filter>",
-             "    </link-entity>",
-             "  </entity>",
-             "</fetch>",
-         ].join("");*/
+       
 
         var fetchXml = [
             "<fetch>",
@@ -264,21 +241,29 @@ function PopulateFields(executionContext) {
                             var StageName = GetNameStage(formContext, stageId);
 
 
-                            var lookupBatch = new Array();
-                            lookupBatch[0] = new Object();
-                            lookupBatch[0].id = batchId;
-                            lookupBatch[0].name = BatchName;
-                            lookupBatch[0].entityType = "dia_batch";
+                            if (batchId == null || stageId == null) {
 
-                            var lookupStage = new Array();
-                            lookupStage[0] = new Object();
-                            lookupStage[0].id = stageId;
-                            lookupStage[0].name = StageName;
-                            lookupStage[0].entityType = "dia_stage";
+                                GetPlannedInAdvanced(formContext, vesselId, scheduledStart);
 
-                            formContext.getAttribute("dia_quantity").setValue(occupation);
-                            formContext.getAttribute("dia_batch").setValue(lookupBatch);
-                            formContext.getAttribute("dia_stage").setValue(lookupStage);
+                            } else {
+
+                                var lookupBatch = new Array();
+                                lookupBatch[0] = new Object();
+                                lookupBatch[0].id = batchId;
+                                lookupBatch[0].name = BatchName;
+                                lookupBatch[0].entityType = "dia_batch";
+
+                                var lookupStage = new Array();
+                                lookupStage[0] = new Object();
+                                lookupStage[0].id = stageId;
+                                lookupStage[0].name = StageName;
+                                lookupStage[0].entityType = "dia_stage";
+
+                                formContext.getAttribute("dia_quantity").setValue(occupation);
+                                formContext.getAttribute("dia_batch").setValue(lookupBatch);
+                                formContext.getAttribute("dia_stage").setValue(lookupStage);
+
+                            }
                         }
                     }
                 }
@@ -371,7 +356,7 @@ function PopulateFields(executionContext) {
         if (formContext.getAttribute("dia_job").getValue() == null) return;
 
         var jobId = formContext.getAttribute("dia_job").getValue()[0].id;
-
+        var higherQuantity = 0;;
         var fetchXmlJobSource = [
             "<fetch top='50'>",
             "  <entity name='dia_job'>",
@@ -384,6 +369,7 @@ function PopulateFields(executionContext) {
             "      <attribute name='dia_batch' />",
             "      <attribute name='dia_stage' />",
             "      <attribute name='dia_quantity' />",
+            "      <order attribute='dia_quantity' descending='true' />",
             "    </link-entity>",
             "  </entity>",
             "</fetch>",
@@ -420,13 +406,18 @@ function PopulateFields(executionContext) {
                             lookupStage[0].name = StageName;
                             lookupStage[0].entityType = "dia_stage";
 
-                            
                             formContext.getAttribute("dia_stage").setValue(lookupStage);
 
-                            if (results.value[i]["dia_jobsourcevessel1.dia_quantity"] < globalOccupation) {
-                                formContext.getAttribute("dia_batch").setValue(lookupBatch);
+                            if (i == 0) {
+
+                                higherQuantity = results.value[i]["dia_jobsourcevessel1.dia_quantity"];
+
+                                if (higherQuantity < globalOccupation) {
+                                    formContext.getAttribute("dia_batch").setValue(lookupBatch);
+                                }
+                                else formContext.getAttribute("dia_batch").setValue(lookupBatchSource);
                             }
-                            else formContext.getAttribute("dia_batch").setValue(lookupBatchSource);
+
                         }
                     }
                 }
@@ -434,7 +425,6 @@ function PopulateFields(executionContext) {
             }
         };
         reqJob.send();
-
     }
 
     if (jobtype == 914440002) //Intake 
@@ -571,6 +561,79 @@ function GetNameStage(formContext, StageId) {
     reqStageName.send();
 
     return StageName;
+
+}
+
+function GetPlannedInAdvanced(formContext, vesselId, scheduledStart) {
+
+    var fetchXml = [
+        "<fetch top='1'>",
+        "  <entity name='dia_jobdestinationvessel'>",
+        "    <attribute name='dia_vessel' />",
+        "    <attribute name='dia_quantity' />",
+        "    <attribute name='dia_batch' />",
+        "    <attribute name='dia_stage' />",
+        "    <filter>",
+        "      <condition attribute='dia_vessel' operator='eq' value='", vesselId, "'/>",
+        "      <condition attribute='statecode' operator='eq' value='", 0, "'/>",
+        "    </filter>",
+        "    <link-entity name='dia_job' from='dia_jobid' to='dia_job'>",
+        "      <attribute name='dia_type' />",
+        "      <filter type='or'>",
+        "        <condition attribute='dia_type' operator='eq' value='", 914440003, "'/>",
+        "        <condition attribute='dia_type' operator='eq' value='", 914440002, "'/>",
+        "      </filter>",
+        "      <filter type='and'>",
+        "        <condition attribute='dia_schelduledstart' operator='le' value='", scheduledStart, "'/>",
+        "      </filter>",
+        "    </link-entity>",
+        "  </entity>",
+        "</fetch>",
+    ].join("");
+
+
+    var reqVessel = new XMLHttpRequest();
+    reqVessel.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_jobdestinationvessels?fetchXml=" + encodeURIComponent(fetchXml), false);
+    reqVessel.setRequestHeader("OData-MaxVersion", "4.0");
+    reqVessel.setRequestHeader("OData-Version", "4.0");
+    reqVessel.setRequestHeader("Accept", "application/json");
+    reqVessel.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+    reqVessel.onreadystatechange = function () {
+        if (this.readyState === 4) {
+            reqVessel.onreadystatechange = null;
+            if (this.status === 200) {
+                var results = JSON.parse(this.response);
+                if (results.value != null) {
+                    for (var i = 0; i < results.value.length; i++) {
+                        var occupation = results.value[i]["dia_quantity"];
+                        var batchId = results.value[i]["_dia_batch_value"];
+                        var stageId = results.value[i]["_dia_stage_value"];
+                        var BatchName = GetNameBatch(formContext, batchId);
+                        var StageName = GetNameStage(formContext, stageId);
+
+                        var lookupBatch = new Array();
+                        lookupBatch[0] = new Object();
+                        lookupBatch[0].id = batchId;
+                        lookupBatch[0].name = BatchName;
+                        lookupBatch[0].entityType = "dia_batch";
+
+                        var lookupStage = new Array();
+                        lookupStage[0] = new Object();
+                        lookupStage[0].id = stageId;
+                        lookupStage[0].name = StageName;
+                        lookupStage[0].entityType = "dia_stage";
+
+                        formContext.getAttribute("dia_quantity").setValue(occupation);
+                        formContext.getAttribute("dia_batch").setValue(lookupBatch);
+                        formContext.getAttribute("dia_stage").setValue(lookupStage);
+                        
+                    }
+                }
+            }
+
+        }
+    };
+    reqVessel.send();
 
 }
 
