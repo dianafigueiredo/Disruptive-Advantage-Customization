@@ -539,9 +539,39 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
             return vesselBatch;
         }
 
-        public void JobPostCreate(IOrganizationService service, ITracingService tracingService, IPluginExecutionContext context) {
+        public void JobPostUpdateTemplate(IOrganizationService service, ITracingService tracingService, IPluginExecutionContext context) {
 
             Entity target = (Entity)context.InputParameters["Target"];
+            if (target.Contains("dia_template") && target.GetAttributeValue<EntityReference>("dia_template") != null) {
+
+                var TemplateEntity = new JobEntity();
+                EntityCollection resultsTemplate = TemplateEntity.GetAnnotation(service, target.GetAttributeValue<EntityReference>("dia_template"));
+
+                foreach (var activity in resultsTemplate.Entities)
+                {
+                    if (activity.Attributes.Contains(activity.LogicalName + "id")) activity.Attributes.Remove(activity.LogicalName + "id");
+                    if (activity.Attributes.Contains("createdon")) activity.Attributes.Remove("createdon");
+                    if (activity.Attributes.Contains("createdby")) activity.Attributes.Remove("createdby");
+                    if (activity.Attributes.Contains("modifiedon")) activity.Attributes.Remove("modifiedon");
+                    if (activity.Attributes.Contains("modifiedby")) activity.Attributes.Remove("modifiedby");
+                    if (activity.Attributes.Contains("ownerid")) activity.Attributes.Remove("ownerid");
+                    if (activity.Attributes.Contains("objectid")) activity.Attributes.Remove("objectid"); 
+                    if (activity.Attributes.Contains("objecttypecode")) activity.Attributes.Remove("objecttypecode");
+                    Entity newActivity = new Entity(activity.LogicalName);
+
+                    newActivity.Attributes["objectid"] = new EntityReference(target.LogicalName, target.Id);
+
+                    //copy attributes
+                    foreach (var attr in activity.Attributes.Keys)
+                    {
+                        newActivity[attr] = activity.Attributes[attr];
+                    }
+
+                    service.Create(newActivity);
+                }
+            }
+          
+
 
 
         }

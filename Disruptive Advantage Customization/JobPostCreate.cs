@@ -21,7 +21,7 @@ namespace Disruptive_Advantage_Customization
                 if (context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
                 {
                     var logic = new Logic();
-                    logic.JobPostCreate(service, tracingService, context); 
+                    //logic.JobPostCreate(service, tracingService, context); 
                    
                 }
             }

@@ -20,6 +20,7 @@ namespace Disruptive_Advantage_Customization
                     logic.JobPostUpdateCompleted(service, context, tracingService); //Update job status to Completed
                     tracingService.Trace("Finished Post Update");
                     logic.JobPostUpdateStarted(service, context, tracingService);//Update job status to In Progress
+                    logic.JobPostUpdateTemplate(service, tracingService, context);
                 }
             }
             catch (Exception ex)

@@ -1,7 +1,7 @@
 function OnLoad(executionContext)
 {
 	var formContext = executionContext.getFormContext();
-	
+	SaveForm(executionContext);
 	formContext.getAttribute("dia_type").addOnChange(jobTypeOnChange);
 	formContext.getAttribute("dia_schelduledstart").addOnChange(startDateOnChange);
 	formContext.getAttribute("dia_schelduledfinish").addOnChange(endDateLimit);
@@ -156,22 +156,14 @@ function startDateOnChange(executionContext) {
 }
 
 
-function FieldsOnChange(executionContext) {
 
-	var formContext = executionContext.getFormContext();
-
-
-
-
-
-}
 
 
 function jobTypeOnChange(executionContext) {
     var formContext = executionContext.getFormContext();
 	
 	var intake = formContext.getAttribute('dia_type').getValue();
-
+	
     if(intake == 914440000){ //InSitu
         setVisibleControl(formContext, "dia_batch", false);
 		setVisibleControl(formContext, "SourceVessel", false);
@@ -213,7 +205,27 @@ function jobTypeOnChange(executionContext) {
     }
 }
 
-function PopulateFields(executionContext){
+function SaveForm(executionContext){
+
+	var formContext = executionContext.getFormContext();
+	var formType = formContext.ui.getFormType();
+
+	if (formContext.ui.getFormType() == 1) {
+
+		setVisibleControl(formContext, "dia_template", false);
+		setVisibleControl(formContext, "dia_estimatedduration", false);
+
+	} else if (formContext.ui.getFormType() != 1) {
+
+		setVisibleControl(formContext, "dia_template", true);
+		setVisibleControl(formContext, "dia_estimatedduration", true);
+	}
+	
+
+}
+
+function PopulateFields(executionContext) {
+
 	var formContext = executionContext.getFormContext();
 	if (formContext.getAttribute("dia_template").getValue() == null) return;
 	var TemplateId = formContext.getAttribute("dia_template").getValue()[0].id;

@@ -56,5 +56,23 @@ namespace Disruptive_Advantage_Customization.Entities
             return ResultsAdditives;
         }
 
+        public EntityCollection GetAnnotation(IOrganizationService service, EntityReference targetEntity)
+        {
+
+            // Instantiate QueryExpression query
+            var query = new QueryExpression("annotation");
+           
+
+            // Add all columns to query.ColumnSet
+            query.ColumnSet.AllColumns = true;
+
+            // Define filter query.Criteria
+            query.Criteria.AddCondition("objectid", ConditionOperator.Equal, targetEntity.Id);
+
+
+            EntityCollection ResultsTemplate = service.RetrieveMultiple(query);
+
+            return ResultsTemplate;
+        }
     }
 }
