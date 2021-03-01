@@ -39,7 +39,7 @@ namespace Disruptive_Advantage_Customization.Entities
         public EntityCollection GetAdditive(IOrganizationService service, Entity targetEntity) {
 
             var queryJobAdditive = new QueryExpression("dia_jobadditive");
-            queryJobAdditive.ColumnSet.AddColumns("dia_jobadditiveid");
+            queryJobAdditive.ColumnSet.AddColumns("dia_jobadditiveid", "dia_additiveid", "dia_quantity");
             queryJobAdditive.Criteria.AddCondition("dia_jobid", ConditionOperator.Equal, targetEntity.Id);
             EntityCollection ResultsAdditives = service.RetrieveMultiple(queryJobAdditive);
 
@@ -73,6 +73,44 @@ namespace Disruptive_Advantage_Customization.Entities
             EntityCollection ResultsTemplate = service.RetrieveMultiple(query);
 
             return ResultsTemplate;
+        }
+
+
+        public EntityCollection GetTask(IOrganizationService service, EntityReference targetEntity)
+        {
+
+            // Instantiate QueryExpression query
+            var query = new QueryExpression("task");
+
+
+            // Add all columns to query.ColumnSet
+            query.ColumnSet.AllColumns = true;
+
+            // Define filter query.Criteria
+            query.Criteria.AddCondition("regardingobjectid", ConditionOperator.Equal, targetEntity.Id);
+
+
+            EntityCollection ResultsTemplate = service.RetrieveMultiple(query);
+
+            return ResultsTemplate;
+        }
+
+
+        public EntityCollection GetAdditive(IOrganizationService service, EntityReference targetEntity) {
+
+            // Instantiate QueryExpression query
+            var query = new QueryExpression("dia_jobadditive");
+   
+
+            // Add columns to query.ColumnSet
+            query.ColumnSet.AddColumns("dia_quantity");
+
+            // Define filter query.Criteria
+            query.Criteria.AddCondition("dia_jobid", ConditionOperator.Equal, targetEntity.Id);
+
+            EntityCollection ResultsAdditive = service.RetrieveMultiple(query);
+
+            return ResultsAdditive;
         }
     }
 }

@@ -1,12 +1,16 @@
 function OnLoad(executionContext)
 {
 	var formContext = executionContext.getFormContext();
-	SaveForm(executionContext);
+	//SaveForm(executionContext);
 	formContext.getAttribute("dia_type").addOnChange(jobTypeOnChange);
 	formContext.getAttribute("dia_schelduledstart").addOnChange(startDateOnChange);
 	formContext.getAttribute("dia_schelduledfinish").addOnChange(endDateLimit);
 	formContext.getAttribute("dia_estimatedduration").addOnChange(EstimatedDuration);
 	formContext.getAttribute("dia_template").addOnChange(PopulateFields);
+
+	formContext.getControl("dia_template").addPreSearch(function () {
+		FilterJobTemplate(formContext);
+	});
 	
 
 	jobTypeOnChange(executionContext);
@@ -160,8 +164,12 @@ function startDateOnChange(executionContext) {
 
 
 function jobTypeOnChange(executionContext) {
-    var formContext = executionContext.getFormContext();
-	
+	var formContext = executionContext.getFormContext();
+
+	formContext.getControl("dia_template").addPreSearch(function () {
+		FilterJobTemplate(formContext);
+	});
+
 	var intake = formContext.getAttribute('dia_type').getValue();
 	
     if(intake == 914440000){ //InSitu
@@ -205,7 +213,7 @@ function jobTypeOnChange(executionContext) {
     }
 }
 
-function SaveForm(executionContext){
+/*function SaveForm(executionContext){
 
 	var formContext = executionContext.getFormContext();
 	var formType = formContext.ui.getFormType();
@@ -222,11 +230,11 @@ function SaveForm(executionContext){
 	}
 	
 
-}
+}*/
 
 function PopulateFields(executionContext) {
-
 	var formContext = executionContext.getFormContext();
+	
 	if (formContext.getAttribute("dia_template").getValue() == null) return;
 	var TemplateId = formContext.getAttribute("dia_template").getValue()[0].id;
 
@@ -323,5 +331,51 @@ function GetNamegroup(formContext, GroupId) {
 	return groupName;
 
 }
+
+function FilterJobTemplate(formContext) {
+
+	if (formContext.getAttribute("dia_type").getValue() == null) return;
+	var type = formContext.getAttribute("dia_type").getValue();
+
+	var fetchXml = [
+		"<fetch>",
+		"  <entity name='dia_jobtemplate'>",
+		"    <attribute name='dia_jobtemplateid' />",
+		"    <filter>",
+		"      <condition attribute='dia_type' operator='eq' value='", type, "'/>",
+		"    </filter>",
+		"  </entity>",
+		"</fetch>",
+	].join("");
+
+	var reqjobtype = new XMLHttpRequest();
+	reqjobtype.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_jobtemplates?fetchXml=" + encodeURIComponent(fetchXml), false);
+	reqjobtype.setRequestHeader("OData-MaxVersion", "4.0");
+	reqjobtype.setRequestHeader("OData-Version", "4.0");
+	reqjobtype.setRequestHeader("Accept", "application/json");
+	reqjobtype.setRequestHeader("Prefer", "odata.include-annotations=\"*\"");
+	reqjobtype.onreadystatechange = function () {
+		if (this.readyState === 4) {
+			reqjobtype.onreadystatechange = null;
+			if (this.status === 200) {
+				var results = JSON.parse(this.response);
+				if (results.value != null) {
+					var values = "";
+					if (results.value.length > 0) {
+						for (var i = 0; i < results.value.length; i++) {
+							var jobTemplateId = results.value[i].dia_jobtemplateid;
+							values += "<value>" + jobTemplateId + "</value>"
+						}
+					}
+					if (values == "") values = "<value>00000000-0000-0000-0000-000000000000</value>";
+					var jobTemplateFilter = "<filter type='and'><condition attribute='dia_jobtemplateid' operator='in'>" + values + "</condition></filter>";
+					formContext.getControl("dia_template").addCustomFilter(jobTemplateFilter, "dia_jobtemplate");
+				}
+			}
+		}
+	};
+	reqjobtype.send();
+}
+
 
 

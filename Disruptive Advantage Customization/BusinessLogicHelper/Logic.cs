@@ -171,21 +171,25 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                 #region update job status reason = completed
                 if (targetEntity.Contains("statuscode") && targetEntity.GetAttributeValue<OptionSetValue>("statuscode").Value == 914440005)//Completed
                 {
+                    var JobLogic = new JobEntity();
                     var jobType = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_type"));
                     if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440002)//intake
                     {
+                        tracingService.Trace("1");
                         var statuscode = targetEntity.GetAttributeValue<OptionSetValue>("statuscode");
                         var quantity = targetEntity.GetAttributeValue<decimal?>("dia_quantity") == null ? 0 : targetEntity.GetAttributeValue<decimal>("dia_quantity");
                         var jobInformation = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_batch"));
                         var batchComposition = jobInformation != null && jobInformation.Contains("dia_batch") ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_batch").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_batch").Id, new ColumnSet("dia_batchcomposition")) : null;
+                        tracingService.Trace("2");
 
-                        var JobLogic = new JobEntity();
                         EntityCollection resultsquery = JobLogic.GetDestinationQuantity(service, targetEntity);
 
                         foreach (var destinationVessel in resultsquery.Entities)
                         {
+                            tracingService.Trace("3");
                             if (destinationVessel.GetAttributeValue<EntityReference>("dia_vessel") != null)
                             {
+                                tracingService.Trace("4");
                                 var vesselInformation = service.Retrieve(destinationVessel.GetAttributeValue<EntityReference>("dia_vessel").LogicalName, destinationVessel.GetAttributeValue<EntityReference>("dia_vessel").Id, new ColumnSet("dia_occupation", "dia_composition", "dia_location", "dia_stage"));
                                 var stage = destinationVessel.GetAttributeValue<EntityReference>("dia_stage") == null ? null : destinationVessel.GetAttributeValue<EntityReference>("dia_stage");
                                 tracingService.Trace("stage: " + stage);
@@ -196,10 +200,12 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                                 sourceVesselUpdate.Attributes["dia_composition"] = batchComposition != null ? batchComposition.GetAttributeValue<EntityReference>("dia_batchcomposition") : null; //Composition que vem do batch     
                                 sourceVesselUpdate.Attributes["dia_stage"] = stage;
 
+                                tracingService.Trace("5");
 
                                 service.Update(sourceVesselUpdate);
 
                                 CreateTransaction(service, tracingService, vesselInformation, jobInformation, destinationVessel, stage, targetEntity);
+                                tracingService.Trace("6");
                             }
                             //update statuscode job destination vessel para completed
                             var vesselUpdate = new Entity(destinationVessel.LogicalName);
@@ -215,7 +221,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                             BatchVesselUpdate.Id = destinationVessel.Id;
                             BatchVesselUpdate.Attributes["dia_batch"] = jobInformation.GetAttributeValue<EntityReference>("dia_batch");
 
-
+                            tracingService.Trace("7");
                             service.Update(vesselUpdate);
                         }
                     }
@@ -227,7 +233,6 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
                         #region Update Destination Vessel Quantity and Composition
 
-                        var JobLogic = new JobEntity();
                         EntityCollection resultsQueryJobDestinationVessel = JobLogic.GetDestinationQuantity(service, targetEntity);
 
                         tracingService.Trace("results Count: " + resultsQueryJobDestinationVessel.Entities.Count);
@@ -314,7 +319,6 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
                         #region Update Source Vessel
 
-                        var JobLogic = new JobEntity();
                         EntityCollection resultsSourceVessel = JobLogic.GetSourceQuantity(service, targetEntity);
 
                         foreach (var sourceVessel in resultsSourceVessel.Entities)
@@ -347,7 +351,6 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
                         #region Update Destination Vessel Additives
 
-                        var JobLogic = new JobEntity();
                         EntityCollection resultsQueryJobDestinationVessel = JobLogic.GetDestinationQuantity(service, targetEntity);
 
                         foreach (var jobDestinationVessel in resultsQueryJobDestinationVessel.Entities)
@@ -377,6 +380,25 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
                         #endregion
                     }
+
+                    #region update additive stock
+                    tracingService.Trace("10");
+                    EntityCollection resultsAdditives = JobLogic.GetAdditive(service, targetEntity);
+
+                    foreach (var jobAdditive in resultsAdditives.Entities)
+                    {
+                        tracingService.Trace("11: " + jobAdditive.GetAttributeValue<EntityReference>("dia_additiveid").Id);
+                        var additiveInfo = service.Retrieve("dia_additive", jobAdditive.GetAttributeValue<EntityReference>("dia_additiveid").Id, new ColumnSet("dia_stock"));
+                        var additiveStock = additiveInfo.GetAttributeValue<decimal>("dia_stock");
+
+                        var additiveStockUpdate = new Entity("dia_additive");
+                        additiveStockUpdate.Id = jobAdditive.GetAttributeValue<EntityReference>("dia_additiveid").Id;
+                        tracingService.Trace("11.5: " + additiveStock);
+                        additiveStockUpdate.Attributes["dia_stock"] = additiveStock - jobAdditive.GetAttributeValue<decimal>("dia_quantity");
+                        tracingService.Trace("12: " + jobAdditive.GetAttributeValue<decimal>("dia_quantity"));
+                        service.Update(additiveStockUpdate);
+                    }
+                    #endregion
                 }
                 #endregion
             }
@@ -540,15 +562,18 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
         }
 
         public void JobPostUpdateTemplate(IOrganizationService service, ITracingService tracingService, IPluginExecutionContext context) {
-
+            tracingService.Trace("1");
             Entity target = (Entity)context.InputParameters["Target"];
             if (target.Contains("dia_template") && target.GetAttributeValue<EntityReference>("dia_template") != null) {
 
+                tracingService.Trace("2");
                 var TemplateEntity = new JobEntity();
                 EntityCollection resultsTemplate = TemplateEntity.GetAnnotation(service, target.GetAttributeValue<EntityReference>("dia_template"));
-
+                EntityCollection TaskTemplate = TemplateEntity.GetTask(service, target.GetAttributeValue<EntityReference>("dia_template"));
+                tracingService.Trace("3");
                 foreach (var activity in resultsTemplate.Entities)
                 {
+                    tracingService.Trace("4");
                     if (activity.Attributes.Contains(activity.LogicalName + "id")) activity.Attributes.Remove(activity.LogicalName + "id");
                     if (activity.Attributes.Contains("createdon")) activity.Attributes.Remove("createdon");
                     if (activity.Attributes.Contains("createdby")) activity.Attributes.Remove("createdby");
@@ -566,14 +591,40 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     {
                         newActivity[attr] = activity.Attributes[attr];
                     }
+                    tracingService.Trace("5");
 
                     service.Create(newActivity);
                 }
+                tracingService.Trace("3");
+                foreach (var task in TaskTemplate.Entities)
+                {
+                    tracingService.Trace("4");
+                    if (task.Attributes.Contains(task.LogicalName + "id")) task.Attributes.Remove(task.LogicalName + "id");
+                    if (task.Attributes.Contains("createdon")) task.Attributes.Remove("createdon");
+                    if (task.Attributes.Contains("createdby")) task.Attributes.Remove("createdby");
+                    if (task.Attributes.Contains("modifiedon")) task.Attributes.Remove("modifiedon");
+                    if (task.Attributes.Contains("modifiedby")) task.Attributes.Remove("modifiedby");
+                    if (task.Attributes.Contains("ownerid")) task.Attributes.Remove("ownerid");
+                    if (task.Attributes.Contains("regardingobjectid")) task.Attributes.Remove("regardingobjectid");
+                    if (task.Attributes.Contains("activityid")) task.Attributes.Remove("activityid");
+                    if (task.Attributes.Contains("activitypartyid")) task.Attributes.Remove("activitypartyid");
+
+                    Entity newTask = new Entity(task.LogicalName);
+
+                    newTask.Attributes["regardingobjectid"] = new EntityReference(target.LogicalName, target.Id);
+
+                    //copy attributes
+                    foreach (var attr in task.Attributes.Keys)
+                    {
+                        newTask[attr] = task.Attributes[attr];
+                        tracingService.Trace("4: " + task.Attributes[attr].ToString());
+                    }
+                    tracingService.Trace("5");
+
+                    service.Create(newTask);
+                }
             }
-          
-
-
-
         }
+
     }
 }
