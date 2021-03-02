@@ -7,12 +7,12 @@ function OnLoad(executionContext)
 	formContext.getAttribute("dia_schelduledfinish").addOnChange(endDateLimit);
 	formContext.getAttribute("dia_estimatedduration").addOnChange(EstimatedDuration);
 	formContext.getAttribute("dia_template").addOnChange(PopulateFields);
-
+	
 	formContext.getControl("dia_template").addPreSearch(function () {
 		FilterJobTemplate(formContext);
 	});
 	
-
+	
 	jobTypeOnChange(executionContext);
 	QuantityLeft(executionContext);
 }
@@ -39,13 +39,13 @@ function EstimatedDuration(executionContext) {
 	var formContext = executionContext.getFormContext();
 	var EstimatedDuration = formContext.getAttribute("dia_estimatedduration").getValue();
 	var endDate = formContext.getAttribute("dia_schelduledstart").getValue();
-
-
 	var newDateObj = new Date(endDate.getTime() + EstimatedDuration * 60000);
 	formContext.getAttribute("dia_schelduledfinish").setValue(newDateObj);
 
 
 }
+
+
 
 
 function QuantityLeft(executionContext) {
@@ -157,15 +157,18 @@ function startDateOnChange(executionContext) {
 			formContext.getAttribute("dia_schelduledfinish").setValue(newDateTime);
 		}
 	}
+	if (formContext.getAttribute("dia_schelduledstart").getValue() == null) return;
+	EstimatedDuration(executionContext)
 }
-
-
-
+function TypeOnChange(executionContext) {
+	var formContext = executionContext.getFormContext();
+	formContext.getAttribute("dia_template").setValue();
+}
 
 
 function jobTypeOnChange(executionContext) {
 	var formContext = executionContext.getFormContext();
-
+	//TypeOnChange(executionContext);
 	formContext.getControl("dia_template").addPreSearch(function () {
 		FilterJobTemplate(formContext);
 	});
@@ -288,6 +291,9 @@ function PopulateFields(executionContext) {
 		}
 	};
 	reqTemplate.send();
+
+	
+
 }
 
 function GetNamegroup(formContext, GroupId) {

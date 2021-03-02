@@ -626,5 +626,73 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
             }
         }
 
+        public void JobPostCreate(IOrganizationService service, ITracingService tracingService, IPluginExecutionContext context) {
+
+            Entity target = (Entity)context.InputParameters["Target"];
+            tracingService.Trace("1: " + target.Contains("dia_template"));
+            if (target.Contains("dia_template") && target.GetAttributeValue<EntityReference>("dia_template") != null)
+            {
+
+                tracingService.Trace("2");
+                var TemplateEntity = new JobEntity();
+                EntityCollection resultsTemplate = TemplateEntity.GetAnnotation(service, target.GetAttributeValue<EntityReference>("dia_template"));
+                EntityCollection TaskTemplate = TemplateEntity.GetTask(service, target.GetAttributeValue<EntityReference>("dia_template"));
+                tracingService.Trace("3");
+                foreach (var activity in resultsTemplate.Entities)
+                {
+                    tracingService.Trace("4");
+                    if (activity.Attributes.Contains(activity.LogicalName + "id")) activity.Attributes.Remove(activity.LogicalName + "id");
+                    if (activity.Attributes.Contains("createdon")) activity.Attributes.Remove("createdon");
+                    if (activity.Attributes.Contains("createdby")) activity.Attributes.Remove("createdby");
+                    if (activity.Attributes.Contains("modifiedon")) activity.Attributes.Remove("modifiedon");
+                    if (activity.Attributes.Contains("modifiedby")) activity.Attributes.Remove("modifiedby");
+                    if (activity.Attributes.Contains("ownerid")) activity.Attributes.Remove("ownerid");
+                    if (activity.Attributes.Contains("objectid")) activity.Attributes.Remove("objectid");
+                    if (activity.Attributes.Contains("objecttypecode")) activity.Attributes.Remove("objecttypecode");
+                    Entity newActivity = new Entity(activity.LogicalName);
+
+                    newActivity.Attributes["objectid"] = new EntityReference(target.LogicalName, target.Id);
+
+                    //copy attributes
+                    foreach (var attr in activity.Attributes.Keys)
+                    {
+                        newActivity[attr] = activity.Attributes[attr];
+                    }
+                    tracingService.Trace("5");
+
+                    service.Create(newActivity);
+                }
+                tracingService.Trace("3");
+                foreach (var task in TaskTemplate.Entities)
+                {
+                    tracingService.Trace("4");
+                    if (task.Attributes.Contains(task.LogicalName + "id")) task.Attributes.Remove(task.LogicalName + "id");
+                    if (task.Attributes.Contains("createdon")) task.Attributes.Remove("createdon");
+                    if (task.Attributes.Contains("createdby")) task.Attributes.Remove("createdby");
+                    if (task.Attributes.Contains("modifiedon")) task.Attributes.Remove("modifiedon");
+                    if (task.Attributes.Contains("modifiedby")) task.Attributes.Remove("modifiedby");
+                    if (task.Attributes.Contains("ownerid")) task.Attributes.Remove("ownerid");
+                    if (task.Attributes.Contains("regardingobjectid")) task.Attributes.Remove("regardingobjectid");
+                    if (task.Attributes.Contains("activityid")) task.Attributes.Remove("activityid");
+                    if (task.Attributes.Contains("activitypartyid")) task.Attributes.Remove("activitypartyid");
+
+                    Entity newTask = new Entity(task.LogicalName);
+
+                    newTask.Attributes["regardingobjectid"] = new EntityReference(target.LogicalName, target.Id);
+
+                    //copy attributes
+                    foreach (var attr in task.Attributes.Keys)
+                    {
+                        newTask[attr] = task.Attributes[attr];
+                        tracingService.Trace("4: " + task.Attributes[attr].ToString());
+                    }
+                    tracingService.Trace("5");
+
+                    service.Create(newTask);
+                }
+            }
+
+        }
+
     }
 }

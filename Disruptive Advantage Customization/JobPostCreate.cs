@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Disruptive_Advantage_Customization
 {
-    class JobPostCreate : IPlugin
+   public class JobPostCreate : IPlugin
     {
         public void Execute(IServiceProvider serviceProvider)
         {
@@ -21,7 +21,7 @@ namespace Disruptive_Advantage_Customization
                 if (context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
                 {
                     var logic = new Logic();
-                    //logic.JobPostCreate(service, tracingService, context); 
+                    logic.JobPostCreate(service, tracingService, context); 
                    
                 }
             }
