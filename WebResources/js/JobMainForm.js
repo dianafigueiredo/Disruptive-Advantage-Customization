@@ -26,7 +26,7 @@ function endDateLimit(executionContext) {
 
 		if (endDate.getTime() < Date.now() || (startDate != null && startDate.getTime() > endDate.getTime())) {
 
-			formContext.getControl("dia_schelduledfinish").setNotification("Invalid date");
+			//formContext.getControl("dia_schelduledfinish").setNotification("Invalid date");
 			//formContext.getAttribute("dia_schelduledfinish").setValue();
 		}
 		else formContext.getControl("dia_schelduledfinish").clearNotification();

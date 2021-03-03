@@ -694,5 +694,30 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
         }
 
+        public void AnalysisTestPostUpdate(IOrganizationService service, IPluginExecutionContext context, ITracingService tracingService, Entity targetEntity) {
+            if (context != null && context.InputParameters != null && context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
+            {
+                var AnalysisLogic = new AnalysisTest();
+                EntityCollection AnalysisTest = AnalysisLogic.GetAnalysisTesteFields(service, targetEntity);
+
+                foreach (var analysis in AnalysisTest.Entities)
+                {
+
+                    var updateAnalysistest = new Entity(analysis.LogicalName);
+                    updateAnalysistest.Attributes["dia_metric"] = analysis.GetAttributeValue<EntityReference>("dia_metric");
+                    updateAnalysistest.Attributes["dia_value"] = analysis.GetAttributeValue<decimal>("dia_value");
+                    updateAnalysistest.Attributes["dia_unit"] = analysis.GetAttributeValue<EntityReference>("dia_unit");
+                    updateAnalysistest.Attributes["dia_passrangefrom"] = analysis.GetAttributeValue<decimal>("dia_passrangefrom");
+                    updateAnalysistest.Attributes["dia_passrangeto"] = analysis.GetAttributeValue<decimal>("dia_passrangeto");
+
+                    service.Update(updateAnalysistest);
+
+                }
+            }
+               
+
+
+        }
+
     }
 }

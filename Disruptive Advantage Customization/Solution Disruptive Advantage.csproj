@@ -61,9 +61,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AnalysisTestPostUpdate.cs" />
     <Compile Include="BatchPostUpdate.cs" />
     <Compile Include="BusinessLogicHelper\Logic.cs" />
     <Compile Include="BusinessLogicHelper\LogicHelper.cs" />
+    <Compile Include="Entities\AnalysisTest.cs" />
     <Compile Include="Entities\JobDestinationEntity.cs" />
     <Compile Include="Entities\JobEntity.cs" />
     <Compile Include="Entities\JobSourceEntity.cs" />
