@@ -561,10 +561,12 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
             return vesselBatch;
         }
 
-        public void JobPostUpdateTemplate(IOrganizationService service, ITracingService tracingService, IPluginExecutionContext context) {
+        public void JobPostUpdateTemplate(IOrganizationService service, ITracingService tracingService, IPluginExecutionContext context)
+        {
             tracingService.Trace("1");
             Entity target = (Entity)context.InputParameters["Target"];
-            if (target.Contains("dia_template") && target.GetAttributeValue<EntityReference>("dia_template") != null) {
+            if (target.Contains("dia_template") && target.GetAttributeValue<EntityReference>("dia_template") != null)
+            {
 
                 tracingService.Trace("2");
                 var TemplateEntity = new JobEntity();
@@ -580,7 +582,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     if (activity.Attributes.Contains("modifiedon")) activity.Attributes.Remove("modifiedon");
                     if (activity.Attributes.Contains("modifiedby")) activity.Attributes.Remove("modifiedby");
                     if (activity.Attributes.Contains("ownerid")) activity.Attributes.Remove("ownerid");
-                    if (activity.Attributes.Contains("objectid")) activity.Attributes.Remove("objectid"); 
+                    if (activity.Attributes.Contains("objectid")) activity.Attributes.Remove("objectid");
                     if (activity.Attributes.Contains("objecttypecode")) activity.Attributes.Remove("objecttypecode");
                     Entity newActivity = new Entity(activity.LogicalName);
 
@@ -626,7 +628,8 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
             }
         }
 
-        public void JobPostCreate(IOrganizationService service, ITracingService tracingService, IPluginExecutionContext context) {
+        public void JobPostCreate(IOrganizationService service, ITracingService tracingService, IPluginExecutionContext context)
+        {
 
             Entity target = (Entity)context.InputParameters["Target"];
             tracingService.Trace("1: " + target.Contains("dia_template"));
@@ -693,31 +696,70 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
             }
 
         }
-
-        public void AnalysisTestPostUpdate(IOrganizationService service, IPluginExecutionContext context, ITracingService tracingService, Entity targetEntity) {
+        public void AnalysisPostUpdate(IOrganizationService service, IPluginExecutionContext context, ITracingService tracingService)
+        {
             if (context != null && context.InputParameters != null && context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
             {
-                var AnalysisLogic = new AnalysisTest();
-                EntityCollection AnalysisTest = AnalysisLogic.GetAnalysisTesteFields(service, targetEntity);
+                Entity targetEntity = (Entity)context.InputParameters["Target"];
 
-                foreach (var analysis in AnalysisTest.Entities)
+                if (targetEntity.Contains("dia_job") && targetEntity.GetAttributeValue<EntityReference>("dia_job") != null)
                 {
+                    var analysisTemplate = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_analysistemplate"));
+                    var analysisTemplateInfo = analysisTemplate != null && analysisTemplate.GetAttributeValue<EntityReference>("dia_analysistemplate") != null == true ? analysisTemplate.GetAttributeValue<EntityReference>("dia_analysistemplate") : null;
 
-                    var updateAnalysistest = new Entity(analysis.LogicalName);
-                    updateAnalysistest.Attributes["dia_metric"] = analysis.GetAttributeValue<EntityReference>("dia_metric");
-                    updateAnalysistest.Attributes["dia_value"] = analysis.GetAttributeValue<decimal>("dia_value");
-                    updateAnalysistest.Attributes["dia_unit"] = analysis.GetAttributeValue<EntityReference>("dia_unit");
-                    updateAnalysistest.Attributes["dia_passrangefrom"] = analysis.GetAttributeValue<decimal>("dia_passrangefrom");
-                    updateAnalysistest.Attributes["dia_passrangeto"] = analysis.GetAttributeValue<decimal>("dia_passrangeto");
+                    var AnalysisLogic = new AnalysisTest();
+                    EntityCollection AnalysisTest = AnalysisLogic.GetAnalysisTesteFields(service, analysisTemplateInfo);
 
-                    service.Update(updateAnalysistest);
+                    foreach (var test in AnalysisTest.Entities)
+                    {
+                        var Analysistest = new Entity(test.LogicalName);
+                        Analysistest.Attributes["dia_analysis"] = new EntityReference(targetEntity.LogicalName,targetEntity.Id);
+                        Analysistest.Attributes["dia_job"] = targetEntity.GetAttributeValue<EntityReference>("dia_job");
+                        Analysistest.Attributes["dia_metric"] = test.GetAttributeValue<EntityReference>("dia_metric");
+                        Analysistest.Attributes["dia_value"] = test.GetAttributeValue<decimal>("dia_value");
+                        Analysistest.Attributes["dia_unit"] = test.GetAttributeValue<EntityReference>("dia_unit");
+                        Analysistest.Attributes["dia_passrangefrom"] = test.GetAttributeValue<decimal>("dia_passrangefrom");
+                        Analysistest.Attributes["dia_passrangeto"] = test.GetAttributeValue<decimal>("dia_passrangeto");
 
+                        service.Create(Analysistest);
+                    }
                 }
             }
-               
-
-
         }
+        public void AnalysisPostCreate(IOrganizationService service, IPluginExecutionContext context, ITracingService tracingService)
+        {
+            tracingService.Trace("1");
+            if (context != null && context.InputParameters != null && context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
+            {
+                tracingService.Trace("2");
+                Entity targetEntity = (Entity)context.InputParameters["Target"];
 
+                if (targetEntity.Contains("dia_job") && targetEntity.GetAttributeValue<EntityReference>("dia_job") != null)
+                {
+                    tracingService.Trace("3");
+                    var analysisTemplate = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_analysistemplate"));
+                    var analysisTemplateInfo = analysisTemplate != null && analysisTemplate.GetAttributeValue<EntityReference>("dia_analysistemplate") != null == true ? analysisTemplate.GetAttributeValue<EntityReference>("dia_analysistemplate") : null;
+
+                    var AnalysisLogic = new AnalysisTest();
+                    EntityCollection AnalysisTest = AnalysisLogic.GetAnalysisTesteFields(service, analysisTemplateInfo);
+
+                    foreach (var test in AnalysisTest.Entities)
+                    {
+                        tracingService.Trace("4");
+                        var analysisTest = new Entity(test.LogicalName);
+                        analysisTest.Attributes["dia_analysis"] = new EntityReference(targetEntity.LogicalName, targetEntity.Id);
+                        analysisTest.Attributes["dia_job"] = targetEntity.GetAttributeValue<EntityReference>("dia_job");
+                        analysisTest.Attributes["dia_metric"] = test.GetAttributeValue<EntityReference>("dia_metric");
+                        analysisTest.Attributes["dia_value"] = test.GetAttributeValue<decimal>("dia_value");
+                        analysisTest.Attributes["dia_unit"] = test.GetAttributeValue<EntityReference>("dia_unit");
+                        analysisTest.Attributes["dia_passrangefrom"] = test.GetAttributeValue<decimal>("dia_passrangefrom");
+                        analysisTest.Attributes["dia_passrangeto"] = test.GetAttributeValue<decimal>("dia_passrangeto");
+
+
+                        service.Create(analysisTest);
+                    }
+                }
+            }
+        }
     }
 }

@@ -61,7 +61,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AnalysisTestPostUpdate.cs" />
+    <Compile Include="AnalysisPostCreate.cs" />
+    <Compile Include="AnalysisPostUpdate.cs" />
     <Compile Include="BatchPostUpdate.cs" />
     <Compile Include="BusinessLogicHelper\Logic.cs" />
     <Compile Include="BusinessLogicHelper\LogicHelper.cs" />

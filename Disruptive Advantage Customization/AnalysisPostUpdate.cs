@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Disruptive_Advantage_Customization
 {
-    class AnalysisTestPostUpdate : IPlugin
+    public class AnalysisPostUpdate : IPlugin
     {
         public void Execute(IServiceProvider serviceProvider)
         {
@@ -21,7 +21,7 @@ namespace Disruptive_Advantage_Customization
                 if (context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
                 {
                     var logic = new Logic();
-                    logic.AnalysisTestPostUpdate(service, context, tracingService);
+                    logic.AnalysisPostUpdate(service, context, tracingService);
                 }
             }
             catch (Exception ex)

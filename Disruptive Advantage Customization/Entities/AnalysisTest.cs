@@ -10,11 +10,11 @@ namespace Disruptive_Advantage_Customization.Entities
 {
     public class AnalysisTest
     {
-        public EntityCollection GetAnalysisTesteFields(IOrganizationService service, Entity targetEntity)
+        public EntityCollection GetAnalysisTesteFields(IOrganizationService service, EntityReference analysisTemplate)
         {
             var query = new QueryExpression("dia_analysistests");
             query.ColumnSet.AddColumns("dia_metric", "dia_value", "dia_unit", "dia_passrangefrom", "dia_passrangeto");
-            query.Criteria.AddCondition("dia_analysistemplate", ConditionOperator.Equal, targetEntity.Id);
+            query.Criteria.AddCondition("dia_analysistemplate", ConditionOperator.Equal, analysisTemplate.Id);
 
             var AnalysisFields = service.RetrieveMultiple(query);
 
