@@ -89,24 +89,29 @@ namespace Disruptive_Advantage_Customization.Entities
             // Define filter query.Criteria
             query.Criteria.AddCondition("regardingobjectid", ConditionOperator.Equal, targetEntity.Id);
 
-
             EntityCollection ResultsTemplate = service.RetrieveMultiple(query);
 
             return ResultsTemplate;
         }
 
 
-        public EntityCollection GetAdditive(IOrganizationService service, EntityReference targetEntity) {
-
-            // Instantiate QueryExpression query
+        public EntityCollection GetAdditive(IOrganizationService service, EntityReference targetEntity)
+        {
             var query = new QueryExpression("dia_jobadditive");
-   
-
-            // Add columns to query.ColumnSet
             query.ColumnSet.AddColumns("dia_quantity");
-
-            // Define filter query.Criteria
             query.Criteria.AddCondition("dia_jobid", ConditionOperator.Equal, targetEntity.Id);
+
+            EntityCollection ResultsAdditive = service.RetrieveMultiple(query);
+
+            return ResultsAdditive;
+        }
+        public EntityCollection GetStorageGivenAdditive(IOrganizationService service, Entity targetEntity)
+        {
+            var query = new QueryExpression("dia_storage");
+            query.TopCount = 1;
+            query.ColumnSet.AddColumns("dia_storageid", "dia_additive");
+            query.Criteria.AddCondition("dia_additive", ConditionOperator.Equal, targetEntity.Id);
+
 
             EntityCollection ResultsAdditive = service.RetrieveMultiple(query);
 

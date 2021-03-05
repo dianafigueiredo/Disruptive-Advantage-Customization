@@ -382,13 +382,14 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     }
 
                     #region update additive stock
+
                     tracingService.Trace("10");
                     EntityCollection resultsAdditives = JobLogic.GetAdditive(service, targetEntity);
 
                     foreach (var jobAdditive in resultsAdditives.Entities)
                     {
                         tracingService.Trace("11: " + jobAdditive.GetAttributeValue<EntityReference>("dia_additiveid").Id);
-                        var additiveInfo = service.Retrieve("dia_additive", jobAdditive.GetAttributeValue<EntityReference>("dia_additiveid").Id, new ColumnSet("dia_stock"));
+                        var additiveInfo = service.Retrieve("dia_additive", jobAdditive.GetAttributeValue<EntityReference>("dia_additiveid").Id, new ColumnSet("dia_stock", "dia_unit"));
                         var additiveStock = additiveInfo.GetAttributeValue<decimal>("dia_stock");
 
                         var additiveStockUpdate = new Entity("dia_additive");
@@ -397,11 +398,29 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                         additiveStockUpdate.Attributes["dia_stock"] = additiveStock - jobAdditive.GetAttributeValue<decimal>("dia_quantity");
                         tracingService.Trace("12: " + jobAdditive.GetAttributeValue<decimal>("dia_quantity"));
                         service.Update(additiveStockUpdate);
+
+                        CreateAdditiveTransaction(service, tracingService, additiveInfo, jobAdditive.GetAttributeValue<decimal>("dia_quantity"), targetEntity, JobLogic);
                     }
                     #endregion
                 }
                 #endregion
             }
+        }
+        public void CreateAdditiveTransaction(IOrganizationService service, ITracingService tracingService, Entity additiveInfo, decimal jobAdditiveQuantity, Entity jobInfo, JobEntity JobLogic)
+        {
+            tracingService.Trace("13");
+            EntityCollection resultStorage = JobLogic.GetStorageGivenAdditive(service, additiveInfo);
+            tracingService.Trace("14");
+            var createAdditiveTransaction = new Entity("dia_additivestocktransaction");
+            createAdditiveTransaction.Attributes["dia_additive"] = new EntityReference(additiveInfo.LogicalName, additiveInfo.Id);
+            tracingService.Trace("15");
+            createAdditiveTransaction.Attributes["dia_quantity"] = jobAdditiveQuantity * -1;
+            tracingService.Trace("16");
+            createAdditiveTransaction.Attributes["dia_reference"] = new EntityReference(jobInfo.LogicalName, jobInfo.Id);
+            tracingService.Trace("17");
+            createAdditiveTransaction.Attributes["dia_storagelocation"] = resultStorage.Entities.Count > 0 == true ? new EntityReference(resultStorage.Entities[0].LogicalName, resultStorage.Entities[0].Id) : null;
+            tracingService.Trace("18");
+            service.Create(createAdditiveTransaction);
         }
         public void UpdateSourceVesselAdditives(IOrganizationService service, ITracingService tracingService, decimal vesselCurrentOccupation, decimal vesselQuantitytoRemove, EntityReference vesselId)
         {
