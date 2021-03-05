@@ -229,7 +229,7 @@ function PopulateFields(executionContext) {
         reqVessel.setRequestHeader("Content-Type", "application/json; charset=utf-8");
         reqVessel.onreadystatechange = function () {
             if (this.readyState === 4) {
-                reqDest.onreadystatechange = null;
+                reqVessel.onreadystatechange = null;
                 if (this.status === 200) {
                     var results = JSON.parse(this.response);
                     if (results.value != null) {
