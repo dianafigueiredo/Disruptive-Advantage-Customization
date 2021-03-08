@@ -389,7 +389,8 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     foreach (var jobAdditive in resultsAdditives.Entities)
                     {
                         tracingService.Trace("11: " + jobAdditive.GetAttributeValue<EntityReference>("dia_additiveid").Id);
-                        var additiveInfo = service.Retrieve("dia_additive", jobAdditive.GetAttributeValue<EntityReference>("dia_additiveid").Id, new ColumnSet("dia_stock", "dia_unit"));
+                        var additiveInfo = service.Retrieve("dia_additive", jobAdditive.GetAttributeValue<EntityReference>("dia_additiveid").Id, new ColumnSet("dia_stock", "dia_unit", "dia_name"));
+                       
                         var additiveStock = additiveInfo.GetAttributeValue<decimal>("dia_stock");
 
                         var additiveStockUpdate = new Entity("dia_additive");
@@ -408,18 +409,19 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
         }
         public void CreateAdditiveTransaction(IOrganizationService service, ITracingService tracingService, Entity additiveInfo, decimal jobAdditiveQuantity, Entity jobInfo, JobEntity JobLogic)
         {
-            tracingService.Trace("13");
+         
             EntityCollection resultStorage = JobLogic.GetStorageGivenAdditive(service, additiveInfo);
-            tracingService.Trace("14");
+           
             var createAdditiveTransaction = new Entity("dia_additivestocktransaction");
             createAdditiveTransaction.Attributes["dia_additive"] = new EntityReference(additiveInfo.LogicalName, additiveInfo.Id);
-            tracingService.Trace("15");
+            createAdditiveTransaction.Attributes["dia_name"] = jobInfo.GetAttributeValue<string>("dia_name") + " - " + additiveInfo.GetAttributeValue<string>("dia_name");
+
             createAdditiveTransaction.Attributes["dia_quantity"] = jobAdditiveQuantity * -1;
-            tracingService.Trace("16");
+      
             createAdditiveTransaction.Attributes["dia_reference"] = new EntityReference(jobInfo.LogicalName, jobInfo.Id);
-            tracingService.Trace("17");
+           
             createAdditiveTransaction.Attributes["dia_storagelocation"] = resultStorage.Entities.Count > 0 == true ? new EntityReference(resultStorage.Entities[0].LogicalName, resultStorage.Entities[0].Id) : null;
-            tracingService.Trace("18");
+         
             service.Create(createAdditiveTransaction);
         }
         public void UpdateSourceVesselAdditives(IOrganizationService service, ITracingService tracingService, decimal vesselCurrentOccupation, decimal vesselQuantitytoRemove, EntityReference vesselId)
@@ -732,7 +734,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     foreach (var test in AnalysisTest.Entities)
                     {
                         var Analysistest = new Entity(test.LogicalName);
-                        Analysistest.Attributes["dia_analysis"] = new EntityReference(targetEntity.LogicalName,targetEntity.Id);
+                        Analysistest.Attributes["dia_analysis"] = new EntityReference(targetEntity.LogicalName, targetEntity.Id);
                         Analysistest.Attributes["dia_job"] = targetEntity.GetAttributeValue<EntityReference>("dia_job");
                         Analysistest.Attributes["dia_metric"] = test.GetAttributeValue<EntityReference>("dia_metric");
                         Analysistest.Attributes["dia_value"] = test.GetAttributeValue<decimal>("dia_value");
@@ -743,8 +745,70 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                         service.Create(Analysistest);
                     }
                 }
+                if (targetEntity.Contains("dia_analysistemplate") && targetEntity.GetAttributeValue<EntityReference>("dia_analysistemplate") != null)
+                {
+
+                    tracingService.Trace("2");
+                    var TemplateEntity = new JobEntity();
+                    EntityCollection resultsTemplate = TemplateEntity.GetAnnotation(service, targetEntity.GetAttributeValue<EntityReference>("dia_analysistemplate"));
+                    EntityCollection TaskTemplate = TemplateEntity.GetTask(service, targetEntity.GetAttributeValue<EntityReference>("dia_analysistemplate"));
+                    tracingService.Trace("3");
+                    foreach (var activity in resultsTemplate.Entities)
+                    {
+                        tracingService.Trace("4");
+                        if (activity.Attributes.Contains(activity.LogicalName + "id")) activity.Attributes.Remove(activity.LogicalName + "id");
+                        if (activity.Attributes.Contains("createdon")) activity.Attributes.Remove("createdon");
+                        if (activity.Attributes.Contains("createdby")) activity.Attributes.Remove("createdby");
+                        if (activity.Attributes.Contains("modifiedon")) activity.Attributes.Remove("modifiedon");
+                        if (activity.Attributes.Contains("modifiedby")) activity.Attributes.Remove("modifiedby");
+                        if (activity.Attributes.Contains("ownerid")) activity.Attributes.Remove("ownerid");
+                        if (activity.Attributes.Contains("objectid")) activity.Attributes.Remove("objectid");
+                        if (activity.Attributes.Contains("objecttypecode")) activity.Attributes.Remove("objecttypecode");
+                        Entity newActivity = new Entity(activity.LogicalName);
+
+                        newActivity.Attributes["objectid"] = new EntityReference(targetEntity.LogicalName, targetEntity.Id);
+
+                        //copy attributes
+                        foreach (var attr in activity.Attributes.Keys)
+                        {
+                            newActivity[attr] = activity.Attributes[attr];
+                        }
+                        tracingService.Trace("5");
+
+                        service.Create(newActivity);
+                    }
+                    tracingService.Trace("3");
+                    foreach (var task in TaskTemplate.Entities)
+                    {
+                        tracingService.Trace("4");
+                        if (task.Attributes.Contains(task.LogicalName + "id")) task.Attributes.Remove(task.LogicalName + "id");
+                        if (task.Attributes.Contains("createdon")) task.Attributes.Remove("createdon");
+                        if (task.Attributes.Contains("createdby")) task.Attributes.Remove("createdby");
+                        if (task.Attributes.Contains("modifiedon")) task.Attributes.Remove("modifiedon");
+                        if (task.Attributes.Contains("modifiedby")) task.Attributes.Remove("modifiedby");
+                        if (task.Attributes.Contains("ownerid")) task.Attributes.Remove("ownerid");
+                        if (task.Attributes.Contains("regardingobjectid")) task.Attributes.Remove("regardingobjectid");
+                        if (task.Attributes.Contains("activityid")) task.Attributes.Remove("activityid");
+                        if (task.Attributes.Contains("activitypartyid")) task.Attributes.Remove("activitypartyid");
+
+                        Entity newTask = new Entity(task.LogicalName);
+
+                        newTask.Attributes["regardingobjectid"] = new EntityReference(targetEntity.LogicalName, targetEntity.Id);
+
+                        //copy attributes
+                        foreach (var attr in task.Attributes.Keys)
+                        {
+                            newTask[attr] = task.Attributes[attr];
+                            tracingService.Trace("4: " + task.Attributes[attr].ToString());
+                        }
+                        tracingService.Trace("5");
+
+                        service.Create(newTask);
+                    }
+                }
             }
         }
+
         public void AnalysisPostCreate(IOrganizationService service, IPluginExecutionContext context, ITracingService tracingService)
         {
             tracingService.Trace("1");
@@ -753,11 +817,12 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                 tracingService.Trace("2");
                 Entity targetEntity = (Entity)context.InputParameters["Target"];
 
+                var analysisTemplate = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_analysistemplate"));
+                var analysisTemplateInfo = analysisTemplate != null && analysisTemplate.GetAttributeValue<EntityReference>("dia_analysistemplate") != null == true ? analysisTemplate.GetAttributeValue<EntityReference>("dia_analysistemplate") : null;
+
                 if (targetEntity.Contains("dia_job") && targetEntity.GetAttributeValue<EntityReference>("dia_job") != null)
                 {
                     tracingService.Trace("3");
-                    var analysisTemplate = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_analysistemplate"));
-                    var analysisTemplateInfo = analysisTemplate != null && analysisTemplate.GetAttributeValue<EntityReference>("dia_analysistemplate") != null == true ? analysisTemplate.GetAttributeValue<EntityReference>("dia_analysistemplate") : null;
 
                     var AnalysisLogic = new AnalysisTest();
                     EntityCollection AnalysisTest = AnalysisLogic.GetAnalysisTesteFields(service, analysisTemplateInfo);
@@ -778,7 +843,72 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                         service.Create(analysisTest);
                     }
                 }
+
+                if (targetEntity.Contains("dia_analysistemplate") && targetEntity.GetAttributeValue<EntityReference>("dia_analysistemplate") != null)
+                {
+
+                    tracingService.Trace("2");
+                    var TemplateEntity = new JobEntity();
+                    EntityCollection resultsTemplate = TemplateEntity.GetAnnotation(service, targetEntity.GetAttributeValue<EntityReference>("dia_analysistemplate"));
+                    EntityCollection TaskTemplate = TemplateEntity.GetTask(service, targetEntity.GetAttributeValue<EntityReference>("dia_analysistemplate"));
+                    tracingService.Trace("3");
+                    foreach (var activity in resultsTemplate.Entities)
+                    {
+                        tracingService.Trace("4");
+                        if (activity.Attributes.Contains(activity.LogicalName + "id")) activity.Attributes.Remove(activity.LogicalName + "id");
+                        if (activity.Attributes.Contains("createdon")) activity.Attributes.Remove("createdon");
+                        if (activity.Attributes.Contains("createdby")) activity.Attributes.Remove("createdby");
+                        if (activity.Attributes.Contains("modifiedon")) activity.Attributes.Remove("modifiedon");
+                        if (activity.Attributes.Contains("modifiedby")) activity.Attributes.Remove("modifiedby");
+                        if (activity.Attributes.Contains("ownerid")) activity.Attributes.Remove("ownerid");
+                        if (activity.Attributes.Contains("objectid")) activity.Attributes.Remove("objectid");
+                        if (activity.Attributes.Contains("objecttypecode")) activity.Attributes.Remove("objecttypecode");
+                        Entity newActivity = new Entity(activity.LogicalName);
+
+                        newActivity.Attributes["objectid"] = new EntityReference(targetEntity.LogicalName, targetEntity.Id);
+
+                        //copy attributes
+                        foreach (var attr in activity.Attributes.Keys)
+                        {
+                            newActivity[attr] = activity.Attributes[attr];
+                        }
+                        tracingService.Trace("5");
+
+                        service.Create(newActivity);
+                    }
+                    tracingService.Trace("3");
+                    foreach (var task in TaskTemplate.Entities)
+                    {
+                        tracingService.Trace("4");
+                        if (task.Attributes.Contains(task.LogicalName + "id")) task.Attributes.Remove(task.LogicalName + "id");
+                        if (task.Attributes.Contains("createdon")) task.Attributes.Remove("createdon");
+                        if (task.Attributes.Contains("createdby")) task.Attributes.Remove("createdby");
+                        if (task.Attributes.Contains("modifiedon")) task.Attributes.Remove("modifiedon");
+                        if (task.Attributes.Contains("modifiedby")) task.Attributes.Remove("modifiedby");
+                        if (task.Attributes.Contains("ownerid")) task.Attributes.Remove("ownerid");
+                        if (task.Attributes.Contains("regardingobjectid")) task.Attributes.Remove("regardingobjectid");
+                        if (task.Attributes.Contains("activityid")) task.Attributes.Remove("activityid");
+                        if (task.Attributes.Contains("activitypartyid")) task.Attributes.Remove("activitypartyid");
+
+                        Entity newTask = new Entity(task.LogicalName);
+
+                        newTask.Attributes["regardingobjectid"] = new EntityReference(targetEntity.LogicalName, targetEntity.Id);
+
+                        //copy attributes
+                        foreach (var attr in task.Attributes.Keys)
+                        {
+                            newTask[attr] = task.Attributes[attr];
+                            tracingService.Trace("4: " + task.Attributes[attr].ToString());
+                        }
+                        tracingService.Trace("5");
+
+                        service.Create(newTask);
+                    }
+
+                }
             }
         }
     }
 }
+
+

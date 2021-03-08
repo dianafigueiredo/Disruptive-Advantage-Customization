@@ -2,13 +2,14 @@
 	var formContext = executionContext.getFormContext();
 	formContext.getAttribute("dia_location").addOnChange(LocationOnChange);
 	formContext.getControl("dia_storage").addPreSearch(function () {
-		FilterJobAdditve(executionContext);
+		FilterJobAdditive(executionContext);
+	});
+	var values = GetDestinationVessel(executionContext);
+	formContext.getControl("dia_vessel").addPreSearch(function () {
+		GetSourceVessel(executionContext, values);
 	});
 }
-
-
-
-function FilterJobAdditve(executionContext) {
+function FilterJobAdditive(executionContext) {
 	var formContext = executionContext.getFormContext();
 	if (formContext.getAttribute("dia_location").getValue() == null) return;
 	var location = formContext.getAttribute("dia_location").getValue();
@@ -57,5 +58,102 @@ function LocationOnChange(executionContext) {
 
 	var formContext = executionContext.getFormContext();
 	formContext.getAttribute("dia_storage").setValue();
+
+}
+
+function GetDestinationVessel(executionContext) {
+    var values = "";
+    var formContext = executionContext.getFormContext();
+    if (formContext.getAttribute("dia_jobid").getValue() == null) return;
+    var JobId = formContext.getAttribute("dia_jobid").getValue()[0].id;
+
+    var fetchXml = [
+        "<fetch>",
+        "  <entity name='dia_jobdestinationvessel'>",
+        "    <attribute name='dia_vessel' />",
+        "    <attribute name='dia_vesselname' />",
+        "    <filter>",
+        "      <condition attribute='dia_job' operator='eq' value='", JobId, "'/>",
+        "    </filter>",
+        "  </entity>",
+        "</fetch>",
+    ].join("");
+
+    var reqJob = new XMLHttpRequest();
+    reqJob.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_jobdestinationvessels?fetchXml=" + encodeURIComponent(fetchXml), false);
+    reqJob.setRequestHeader("OData-MaxVersion", "4.0");
+    reqJob.setRequestHeader("OData-Version", "4.0");
+    reqJob.setRequestHeader("Accept", "application/json");
+    reqJob.setRequestHeader("Prefer", "odata.include-annotations=\"*\"");
+    reqJob.onreadystatechange = function () {
+        if (this.readyState === 4) {
+            reqJob.onreadystatechange = null;
+            if (this.status === 200) {
+                var results = JSON.parse(this.response);
+                if (results.value != null) {
+
+                    if (results.value.length > 0) {
+                        for (var i = 0; i < results.value.length; i++) {
+                            var vesselid = results.value[i]["_dia_vessel_value"];
+                            values += "<value>" + vesselid + "</value>"
+                        }
+                    }
+                    if (values == "") values = "<value>00000000-0000-0000-0000-000000000000</value>";
+                    var jobFilter = "<filter type='and'><condition attribute='dia_vesselid' operator='in'>" + values + "</condition></filter>";
+                }
+            }
+        }
+    };
+    reqJob.send();
+
+    return values;
+}
+
+function GetSourceVessel(executionContext, values) {
+
+    var formContext = executionContext.getFormContext();
+    if (formContext.getAttribute("dia_jobid").getValue() == null) return;
+    var JobId = formContext.getAttribute("dia_jobid").getValue()[0].id;
+
+    var fetchXml = [
+        "<fetch top='50'>",
+        "  <entity name='dia_jobsourcevessel'>",
+        "    <attribute name='dia_vessel' />",
+        "    <attribute name='dia_vesselname' />",
+        "    <filter>",
+        "      <condition attribute='dia_job' operator='eq' value='", JobId, "'/>",
+        "    </filter>",
+        "  </entity>",
+        "</fetch>",
+    ].join("");
+
+    var reqJob = new XMLHttpRequest();
+    reqJob.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_jobsourcevessels?fetchXml=" + encodeURIComponent(fetchXml), false);
+    reqJob.setRequestHeader("OData-MaxVersion", "4.0");
+    reqJob.setRequestHeader("OData-Version", "4.0");
+    reqJob.setRequestHeader("Accept", "application/json");
+    reqJob.setRequestHeader("Prefer", "odata.include-annotations=\"*\"");
+    reqJob.onreadystatechange = function () {
+        if (this.readyState === 4) {
+            reqJob.onreadystatechange = null;
+            if (this.status === 200) {
+                var results = JSON.parse(this.response);
+                if (results.value != null) {
+                    if (results.value.length > 0) {
+                        for (var i = 0; i < results.value.length; i++) {
+                            var vesselid = results.value[i]["_dia_vessel_value"];
+                            values += "<value>" + vesselid + "</value>"
+                        }
+                    }
+
+                }
+            }
+        }
+    };
+    reqJob.send();
+
+    if (values == "") values = "<value>00000000-0000-0000-0000-000000000000</value>";
+    var jobFilter = "<filter type='and'><condition attribute='dia_vesselid' operator='in'>" + values + "</condition></filter>";
+    formContext.getControl("dia_vessel").addCustomFilter(jobFilter, "dia_vessel");
 
 }
