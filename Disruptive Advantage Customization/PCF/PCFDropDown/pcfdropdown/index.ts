@@ -1,13 +1,21 @@
-import {IInputs, IOutputs} from "./generated/ManifestTypes";
+import { IInputs, IOutputs } from "./generated/ManifestTypes";
+import * as React from 'react';
+import * as ReactDOM from "react-dom";
+import { DropDown } from "./DropDown";
 
 export class pcfdropdown implements ComponentFramework.StandardControl<IInputs, IOutputs> {
+
+
+	
+	private Div: HTMLDivElement;
 
 	/**
 	 * Empty constructor.
 	 */
 	constructor()
 	{
-
+		this.Div = document.createElement("div");
+		
 	}
 
 	/**
@@ -20,7 +28,10 @@ export class pcfdropdown implements ComponentFramework.StandardControl<IInputs, 
 	 */
 	public init(context: ComponentFramework.Context<IInputs>, notifyOutputChanged: () => void, state: ComponentFramework.Dictionary, container:HTMLDivElement)
 	{
-		// Add control initialization code
+
+		container.append(this.Div);
+
+	
 	}
 
 
@@ -30,6 +41,7 @@ export class pcfdropdown implements ComponentFramework.StandardControl<IInputs, 
 	 */
 	public updateView(context: ComponentFramework.Context<IInputs>): void
 	{
+		ReactDOM.render(React.createElement(DropDown, null), this.Div);
 		// Add code to update control view
 	}
 

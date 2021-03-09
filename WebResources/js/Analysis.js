@@ -165,7 +165,7 @@ function GetSourceVessel(executionContext, values) {
     var JobId = formContext.getAttribute("dia_job").getValue()[0].id;
 
     var fetchXml = [
-        "<fetch top='50'>",
+        "<fetch >",
         "  <entity name='dia_jobsourcevessel'>",
         "    <attribute name='dia_vessel' />",
         "    <attribute name='dia_vesselname' />",
