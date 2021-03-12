@@ -2,12 +2,15 @@ import { IInputs, IOutputs } from "./generated/ManifestTypes";
 import * as React from 'react';
 import * as ReactDOM from "react-dom";
 import { DropDown } from "./DropDown";
+import { SearchBoxx } from "./SearchBox";
+import { Stack, IStackTokens } from 'office-ui-fabric-react/lib/Stack';
 
 export class pcfdropdown implements ComponentFramework.StandardControl<IInputs, IOutputs> {
 
 
 	
 	private Div: HTMLDivElement;
+	private Div2: HTMLDivElement;
 
 	/**
 	 * Empty constructor.
@@ -15,6 +18,7 @@ export class pcfdropdown implements ComponentFramework.StandardControl<IInputs, 
 	constructor()
 	{
 		this.Div = document.createElement("div");
+		this.Div2 = document.createElement("div");
 		
 	}
 
@@ -28,9 +32,9 @@ export class pcfdropdown implements ComponentFramework.StandardControl<IInputs, 
 	 */
 	public init(context: ComponentFramework.Context<IInputs>, notifyOutputChanged: () => void, state: ComponentFramework.Dictionary, container:HTMLDivElement)
 	{
-
+		container.append(this.Div2);
 		container.append(this.Div);
-
+		
 	
 	}
 
@@ -41,6 +45,7 @@ export class pcfdropdown implements ComponentFramework.StandardControl<IInputs, 
 	 */
 	public updateView(context: ComponentFramework.Context<IInputs>): void
 	{
+		ReactDOM.render(React.createElement(SearchBoxx, null), this.Div2);
 		ReactDOM.render(React.createElement(DropDown, null), this.Div);
 		// Add code to update control view
 	}

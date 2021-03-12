@@ -22,6 +22,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
             foreach (var item in dataCollection.Entities)
             {
+                if (!item.Contains(fieldName)) continue;
                 result += (decimal?)item[fieldName];
             }
             return result;
