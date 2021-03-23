@@ -7,6 +7,23 @@ function onLoadJobDestinationRibbon(executionContext) {
     formContext.getAttribute("dia_vessel").addOnChange(PopulateFields);
     formContext.getAttribute("dia_postvolume").addOnChange(PopulateFields);
 }
+function onSave(executionContext) {
+    var formContext = executionContext.getFormContext();
+    PopulateVesselField(formContext);
+}
+function PopulateVesselField(formContext) {
+    var vesselDropDown = formContext.getAttribute("dia_vesseldropdown").getValue();
+    var vesselName = vesselDropDown.split("_")[0];
+    var vesselId = vesselDropDown.split("_")[1];
+
+    var lookupVessel = new Array();
+    lookupVessel[0] = new Object();
+    lookupVessel[0].id = vesselId.replace(" ", "").replace(" ", "");
+    lookupVessel[0].name = vesselName;
+    lookupVessel[0].entityType = "dia_vessel";
+
+    formContext.getAttribute("dia_vessel").setValue(lookupVessel);
+}
 function vesselOnChange(executionContext) {
     var formContext = executionContext.getFormContext();
     if (formContext.getAttribute("dia_vessel").getValue() != null) {

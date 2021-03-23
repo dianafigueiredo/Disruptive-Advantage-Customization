@@ -2,6 +2,8 @@
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 {
@@ -12,14 +14,33 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
             if (context != null && context.InputParameters != null && context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
             {
                 Entity jobDestination = (Entity)context.InputParameters["Target"];
-                var destVessel = jobDestination.GetAttributeValue<EntityReference>("dia_vessel");
+
+               
+
+                //var destVessel = jobDestination.GetAttributeValue<EntityReference>("dia_vessel");
+                tracingService.Trace("vesselId: " + jobDestination.GetAttributeValue<string>("dia_vesseldropdown"));
+
+                List<string> words = jobDestination.GetAttributeValue<string>("dia_vesseldropdown").Split(new char[] { '_' }).ToList();
+                string vesselId = "";
+                for(var i = 0; i < words.Count; i++)
+                {
+                    if (i == 1) vesselId = words[i];
+                }
+
+                var destVessel = new EntityReference("dia_vessel", new Guid(vesselId.ToString()));
+              
                 var jobRef = jobDestination.GetAttributeValue<EntityReference>("dia_job");
                 var jobEnt = service.Retrieve(jobRef.LogicalName, jobRef.Id, new ColumnSet("dia_schelduledstart", "dia_quantity", "dia_type"));
+
 
                 #region JobsToFill
                 tracingService.Trace("1");
                 var JobDestinationLogic = new JobDestinationEntity();
 
+                tracingService.Trace("2.5" + jobDestination);
+                tracingService.Trace("2.6" + destVessel);
+                tracingService.Trace("2.6" + jobEnt);
+                
                 var vesselFills = JobDestinationLogic.GetDestinationVesselQuantity(service, jobDestination, destVessel, jobEnt);
 
                 tracingService.Trace("2");
@@ -511,6 +532,21 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
             service.Create(createTransaction);
         }
+
+
+        /*public void CreateTransactionAdditiveStock(IOrganizationService service, ITracingService tracingService, Entity AdditiveInfo, Entity Storage, Entity job ){
+
+            var createTransaction = new Entity("dia_additivestocktransaction");
+
+            createTransaction.Attributes["dia_additive"] = AdditiveInfo.Contains("dia_additive") == true? AdditiveInfo.GetAttributeValue<EntityReference>("dia_additive") : null; 
+            createTransaction.Attributes["dia_quantity"] = AdditiveInfo.GetAttributeValue<decimal>("dia_quantity");
+            createTransaction.Attributes["dia_storagelocation"] = Storage.Contains("dia_storagelocation") == true ? Storage.GetAttributeValue<EntityReference>("dia_storage");
+            createTransaction.Attributes["dia_reference"] = job.Contains("dia_additive") == true? job.GetAttributeValue<EntityReference>("dia_additive") : null; 
+
+            service.Create(createTransaction);
+        
+        
+        }*/
 
         public void JobSourceVesselPostUpdate(IOrganizationService service, ITracingService tracingService, IPluginExecutionContext context)
         {
