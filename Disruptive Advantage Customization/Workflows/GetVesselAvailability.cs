@@ -27,6 +27,9 @@ namespace Disruptive_Advantage_Customization.Workflows
 				IOrganizationServiceFactory serviceFactory = executionContext.GetExtension<IOrganizationServiceFactory>();
 				IOrganizationService service = serviceFactory.CreateOrganizationService(context.InitiatingUserId);
 
+                Users users = new Users();
+                string usersResults = "";
+                //List<Users> usersResult = new List<Users>();
                 var query = new QueryExpression("dia_vessel");
                 query.ColumnSet.AddColumns("dia_vesselid", "dia_name", "dia_capacity", "dia_type", "dia_occupation");
 
@@ -83,7 +86,7 @@ namespace Disruptive_Advantage_Customization.Workflows
                     #endregion
                     if (finalOccupation < 0 && jobEnt.GetAttributeValue<OptionSetValue>("dia_type").Value != 914440000)
                     {
-                        this.Result.Set(executionContext, "Unavailable");
+                        //this.Result.Set(executionContext, "Unavailable");
                         resultAux = "Unavailable";
                     }
 
@@ -105,12 +108,12 @@ namespace Disruptive_Advantage_Customization.Workflows
 
                         if (plannedvesselOccupation != 0 && jobtype.Value != 914440001)
                         {
-                            this.Result.Set(executionContext, "Unavailable");
+                            //this.Result.Set(executionContext, "Unavailable");
                             resultAux = "Unavailable";
                         }
                         if (vesselOccupation > 0 && jobtype.Value != 914440001)
                         {
-                            this.Result.Set(executionContext, "Unavailable");
+                            //this.Result.Set(executionContext, "Unavailable");
                             resultAux = "Unavailable";
                         }
                     }
@@ -119,14 +122,23 @@ namespace Disruptive_Advantage_Customization.Workflows
                     { //if job type in-situ or dispatch +
                         if (plannedvesselOccupation <= 0 && vesselOccupation <= 0)
                         {
-                            this.Result.Set(executionContext, "Unavailable");
+                            //this.Result.Set(executionContext, "Unavailable");
                             resultAux = "Unavailable";
                         }
                     }
-                    if (resultAux != "Unavailable") this.Result.Set(executionContext, "Available");
+                    if (resultAux != "Unavailable") //this.Result.Set(executionContext, "Available");
                     #endregion
-                }
 
+                    users.label = vessel.GetAttributeValue<string>("dia_name") + " (" + vessel.GetAttributeValue<decimal>("dia_capacity");
+                    users.value = "value";
+                    users.type = "type";
+                    users.available = "available,";
+                    tracingService.Trace("users: " + usersResults);
+
+                    usersResults += JsonHelper.JsonSerializer<Users>(users);
+
+                }
+                this.Result.Set(executionContext, usersResults);
             }
             catch (Exception ex)
 			{
@@ -135,4 +147,10 @@ namespace Disruptive_Advantage_Customization.Workflows
 		}
 	}
 }
-
+public class Users
+{
+    public string label { get; set; }
+    public string value { get; set; }
+    public string type { get; set; }
+    public string available { get; set; }
+}
