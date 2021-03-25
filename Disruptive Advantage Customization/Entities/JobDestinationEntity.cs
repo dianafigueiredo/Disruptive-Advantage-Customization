@@ -24,7 +24,7 @@ namespace Disruptive_Advantage_Customization.Entities
 
             return vesselFills;
         }
-        public EntityCollection GetSourceVesselQuantity(IOrganizationService service, Entity jobDestination, EntityReference destVessel, Entity jobEnt)
+        public EntityCollection GetSourceVesselQuantity(IOrganizationService service, EntityReference destVessel, Entity jobEnt)
         {
             var queryJobSource = new QueryExpression("dia_jobsourcevessel");
             queryJobSource.ColumnSet = new ColumnSet("dia_quantity");

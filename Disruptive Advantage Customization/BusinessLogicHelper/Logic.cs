@@ -40,20 +40,21 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                 tracingService.Trace("2.5" + jobDestination);
                 tracingService.Trace("2.6" + destVessel);
                 tracingService.Trace("2.6" + jobEnt);
-                
-                var vesselFills = JobDestinationLogic.GetDestinationVesselQuantity(service, jobDestination, destVessel, jobEnt);
+                var JobSourceLogic = new JobSourceEntity();
+                //var vesselFills = JobDestinationLogic.GetDestinationVesselQuantity(service, jobDestination, destVessel, jobEnt);
+                var vesselAsDestination = JobSourceLogic.GetVesselJobAsDestination(service, destVessel, jobEnt);
 
                 tracingService.Trace("2");
 
                 var logiHelper = new LogicHelper();
-                var qtdFill = logiHelper.SumOfQuantities(vesselFills, "dia_quantity", tracingService);
+                var qtdFill = logiHelper.SumOfQuantities(vesselAsDestination, "dia_quantity", tracingService);
 
                 tracingService.Trace("3");
                 #endregion JobsToFill
 
                 #region JobsToEmpty
 
-                var vessEmpty = JobDestinationLogic.GetSourceVesselQuantity(service, jobDestination, destVessel, jobEnt);
+                var vessEmpty = JobDestinationLogic.GetSourceVesselQuantity(service, destVessel, jobEnt);
                 var qtdDrop = logiHelper.SumOfQuantities(vessEmpty, "dia_quantity", tracingService);
                 tracingService.Trace("4");
 
@@ -79,9 +80,9 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
                 #region different actions
 
-                var JobSourceLogic = new JobSourceEntity();
+                /*var JobSourceLogic = new JobSourceEntity();
                 var vesselAsDestination = JobSourceLogic.GetVesselJobAsDestination(service, destVessel, jobEnt);
-
+                */
 
 
                 var plannedvesselOccupation = logiHelper.VesselOccupation(vesselAsDestination);
