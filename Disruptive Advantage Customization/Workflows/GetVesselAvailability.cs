@@ -27,7 +27,6 @@ namespace Disruptive_Advantage_Customization.Workflows
 				IOrganizationServiceFactory serviceFactory = executionContext.GetExtension<IOrganizationServiceFactory>();
 				IOrganizationService service = serviceFactory.CreateOrganizationService(context.InitiatingUserId);
 
-                Users users = new Users();
                 string usersResults = "";
                 List<Users> usersResult = new List<Users>();
                 var query = new QueryExpression("dia_vessel");
@@ -37,6 +36,7 @@ namespace Disruptive_Advantage_Customization.Workflows
                 var i = 0;
                 foreach (var vessel in resultsVessel.Entities)
                 {
+                    Users users = new Users();
                     tracingService.Trace("i: " + i);
                     var destVessel = new EntityReference(vessel.LogicalName, vessel.Id);
                     var resultAux = "";
