@@ -89,7 +89,7 @@ namespace Disruptive_Advantage_Customization.Workflows
                     if (finalOccupation < 0 && jobEnt.GetAttributeValue<OptionSetValue>("dia_type").Value != 914440000)
                     {
                         //this.Result.Set(executionContext, "Unavailable");
-                        resultAux = "Unavailable1";
+                        resultAux = "Unavailable";
                     }
 
                     #region different actions
@@ -111,12 +111,12 @@ namespace Disruptive_Advantage_Customization.Workflows
                         if (plannedvesselOccupation != 0 && jobtype.Value != 914440001)
                         {
                             //this.Result.Set(executionContext, "Unavailable");
-                            resultAux = "Unavailable2";
+                            resultAux = "Unavailable";
                         }
                         if (vesselOccupation > 0 && jobtype.Value != 914440001)
                         {
                             //this.Result.Set(executionContext, "Unavailable");
-                            resultAux = "Unavailable3";
+                            resultAux = "Unavailable";
                         }
                     }
 
@@ -125,13 +125,13 @@ namespace Disruptive_Advantage_Customization.Workflows
                         if (plannedvesselOccupation <= 0 && vesselOccupation <= 0)
                         {
                             //this.Result.Set(executionContext, "Unavailable");
-                            resultAux = "Unavailable4";
+                            resultAux = "Unavailable";
                         }
                     }
                     if (!resultAux.Contains("Unavailable")) resultAux = "Available";
                     #endregion
 
-                    users.label = vessel.GetAttributeValue<string>("dia_name") + " (" + Convert.ToInt32(vessel.GetAttributeValue<decimal>("dia_capacity")) + " )";
+                    users.label = vessel.GetAttributeValue<string>("dia_name") + " (" + Convert.ToInt32(vessel.GetAttributeValue<decimal>("dia_capacity")) + ") " + resultAux;
                     users.value = vessel.GetAttributeValue<string>("dia_name") + " _ " + vessel.GetAttributeValue<Guid>("dia_vesselid") + " _ " + "dia_vessel$$$" + vessel.FormattedValues["dia_type"];
                     users.type = vessel.FormattedValues["dia_type"];
                     users.available = resultAux;
