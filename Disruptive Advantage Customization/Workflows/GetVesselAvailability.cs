@@ -29,14 +29,15 @@ namespace Disruptive_Advantage_Customization.Workflows
 
                 Users users = new Users();
                 string usersResults = "";
-                //List<Users> usersResult = new List<Users>();
+                List<Users> usersResult = new List<Users>();
                 var query = new QueryExpression("dia_vessel");
                 query.ColumnSet.AddColumns("dia_vesselid", "dia_name", "dia_capacity", "dia_type", "dia_occupation");
 
                 EntityCollection resultsVessel = service.RetrieveMultiple(query);
-
+                var i = 0;
                 foreach (var vessel in resultsVessel.Entities)
                 {
+                    tracingService.Trace("i: " + i);
                     var destVessel = new EntityReference(vessel.LogicalName, vessel.Id);
                     var resultAux = "";
 
@@ -77,6 +78,7 @@ namespace Disruptive_Advantage_Customization.Workflows
                     var finalOccupation = logiHelper.FinalOccupation(capVessel, occVessel, qtdJobDestVessel, qtdFill, qtdDrop);
 
                     #region traces
+                    tracingService.Trace("Vessel name: " + vessel.GetAttributeValue<string>("dia_name"));
                     tracingService.Trace("capVessel: " + capVessel);
                     tracingService.Trace("occVessel: " + occVessel);
                     tracingService.Trace("qtdJobDestVessel: " + qtdJobDestVessel);
@@ -87,7 +89,7 @@ namespace Disruptive_Advantage_Customization.Workflows
                     if (finalOccupation < 0 && jobEnt.GetAttributeValue<OptionSetValue>("dia_type").Value != 914440000)
                     {
                         //this.Result.Set(executionContext, "Unavailable");
-                        resultAux = "Unavailable";
+                        resultAux = "Unavailable1";
                     }
 
                     #region different actions
@@ -109,12 +111,12 @@ namespace Disruptive_Advantage_Customization.Workflows
                         if (plannedvesselOccupation != 0 && jobtype.Value != 914440001)
                         {
                             //this.Result.Set(executionContext, "Unavailable");
-                            resultAux = "Unavailable";
+                            resultAux = "Unavailable2";
                         }
                         if (vesselOccupation > 0 && jobtype.Value != 914440001)
                         {
                             //this.Result.Set(executionContext, "Unavailable");
-                            resultAux = "Unavailable";
+                            resultAux = "Unavailable3";
                         }
                     }
 
@@ -123,22 +125,22 @@ namespace Disruptive_Advantage_Customization.Workflows
                         if (plannedvesselOccupation <= 0 && vesselOccupation <= 0)
                         {
                             //this.Result.Set(executionContext, "Unavailable");
-                            resultAux = "Unavailable";
+                            resultAux = "Unavailable4";
                         }
                     }
-                    if (resultAux != "Unavailable") //this.Result.Set(executionContext, "Available");
+                    if (!resultAux.Contains("Unavailable")) resultAux = "Available";
                     #endregion
 
-                    users.label = vessel.GetAttributeValue<string>("dia_name") + " (" + vessel.GetAttributeValue<decimal>("dia_capacity");
-                    users.value = "value";
-                    users.type = "type";
-                    users.available = "available,";
-                    tracingService.Trace("users: " + usersResults);
-
-                    usersResults += JsonHelper.JsonSerializer<Users>(users);
-
+                    users.label = vessel.GetAttributeValue<string>("dia_name") + " (" + Convert.ToInt32(vessel.GetAttributeValue<decimal>("dia_capacity")) + " )";
+                    users.value = vessel.GetAttributeValue<string>("dia_name") + " _ " + vessel.GetAttributeValue<Guid>("dia_vesselid") + " _ " + "dia_vessel$$$" + vessel.FormattedValues["dia_type"];
+                    users.type = vessel.FormattedValues["dia_type"];
+                    users.available = resultAux;
+                    //tracingService.Trace("users: " + usersResults);
+                    usersResult.Add(users);
+                    i++;
                 }
-                this.Result.Set(executionContext, usersResults);
+                this.Result.Set(executionContext, JsonHelper.JsonSerializer<List<Users>>(usersResult));
+                tracingService.Trace("Final: " + JsonHelper.JsonSerializer<List<Users>>(usersResult));
             }
             catch (Exception ex)
 			{

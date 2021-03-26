@@ -6,7 +6,7 @@ namespace Disruptive_Advantage_Customization.Entities
 {
     public class JobDestinationEntity
     {
-        public EntityCollection GetDestinationVesselQuantity(IOrganizationService service, Entity jobDestination, EntityReference destVessel, Entity jobEnt)
+        /*public EntityCollection GetDestinationVesselQuantity(IOrganizationService service, Entity jobDestination, EntityReference destVessel, Entity jobEnt)
         {
             var queryJobDestinations = new QueryExpression("dia_jobdestinationvessel");
             queryJobDestinations.ColumnSet = new ColumnSet("dia_vessel", "dia_quantity");
@@ -23,7 +23,7 @@ namespace Disruptive_Advantage_Customization.Entities
             var vesselFills = service.RetrieveMultiple(queryJobDestinations);
 
             return vesselFills;
-        }
+        }*/
         public EntityCollection GetSourceVesselQuantity(IOrganizationService service, EntityReference destVessel, Entity jobEnt)
         {
             var queryJobSource = new QueryExpression("dia_jobsourcevessel");
