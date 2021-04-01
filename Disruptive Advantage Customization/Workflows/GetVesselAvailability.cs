@@ -108,12 +108,12 @@ namespace Disruptive_Advantage_Customization.Workflows
                     if (jobtype != null && (jobtype.Value == 914440002 || jobtype.Value == 914440001)) // if job type intake or transfer
                     {
 
-                        if (plannedvesselOccupation != 0 && jobtype.Value != 914440001)
+                        if (plannedvesselOccupation != 0 )
                         {
                             //this.Result.Set(executionContext, "Unavailable");
                             resultAux = "Unavailable";
                         }
-                        if (vesselOccupation > 0 && jobtype.Value != 914440001)
+                        if (vesselOccupation > 0 )
                         {
                             //this.Result.Set(executionContext, "Unavailable");
                             resultAux = "Unavailable";

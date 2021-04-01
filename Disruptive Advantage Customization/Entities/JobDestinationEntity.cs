@@ -42,8 +42,26 @@ namespace Disruptive_Advantage_Customization.Entities
 
             return vesselEmpty;
         }
+        public EntityCollection GetDestinationQuantity(IOrganizationService service, EntityReference job)
+        {
+            var fetchXml = $@"
+             <fetch aggregate='true'>
+             <entity name='dia_jobdestinationvessel'>
+             <attribute name='dia_quantity' alias='Quantity' aggregate='sum' />
+             <filter>
+             <condition attribute='dia_job' operator='eq' value='{job.Id}'/>
+             </filter>
+             </entity>
+             </fetch>";
 
-        
+            var Quantity = service.RetrieveMultiple(new FetchExpression(fetchXml));
+
+            return Quantity;
+
+
+
+        }
+
 
 
 

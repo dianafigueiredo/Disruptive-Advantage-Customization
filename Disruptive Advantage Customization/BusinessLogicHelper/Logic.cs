@@ -126,6 +126,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
         }
         public void JobSourceVesselPostCreate(IOrganizationService service, IPluginExecutionContext context, ITracingService tracingService)
         {
+            #region 
             if (context != null && context.InputParameters != null && context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
             {
                 Entity job = (Entity)context.InputParameters["Target"];
@@ -147,6 +148,49 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     service.Update(jobUpdate);
                 }
             }
+
+            #endregion
+
+            Entity targetEntity = (Entity)context.InputParameters["Target"];
+            tracingService.Trace("1");
+            var JobDestLogic = new JobDestinationEntity();
+            tracingService.Trace("2");
+            EntityCollection GetDestinationQuantity = JobDestLogic.GetDestinationQuantity(service, targetEntity.GetAttributeValue<EntityReference>("dia_job"));
+            tracingService.Trace("Destination"+ GetDestinationQuantity);
+            var JobSource = new JobSourceEntity();
+            tracingService.Trace("3");
+            EntityCollection GetQuantity = JobSource.GetQuantity(service, targetEntity.GetAttributeValue<EntityReference>("dia_job"));
+            tracingService.Trace("source" + GetQuantity);
+            var jobTypes = service.Retrieve(targetEntity.GetAttributeValue<EntityReference>("dia_job").LogicalName, targetEntity.GetAttributeValue<EntityReference>("dia_job").Id, new ColumnSet("dia_type"));
+           
+            if (jobTypes.Contains("dia_type") && jobTypes.GetAttributeValue<OptionSetValue>("dia_type") != null && jobTypes.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440001)
+            {
+                tracingService.Trace("4");
+
+                var variance = Convert.ToInt32(GetQuantity.Entities[0].GetAttributeValue<AliasedValue>("Quantity").Value) - Convert.ToInt32(GetDestinationQuantity.Entities[0].GetAttributeValue<AliasedValue>("Quantity").Value);
+                tracingService.Trace("variance"+ variance);
+                decimal variancepercentage = 0;
+
+                if (Convert.ToInt32(GetDestinationQuantity.Entities[0].GetAttributeValue<AliasedValue>("Quantity").Value)!= 0) {
+
+                    variancepercentage =( variance / (Convert.ToDecimal(GetQuantity.Entities[0].GetAttributeValue<AliasedValue>("Quantity").Value)))*100;
+
+                    tracingService.Trace("variancePercentagem" + variancepercentage);
+
+                }
+
+                var jobUpdate = new Entity(targetEntity.GetAttributeValue<EntityReference>("dia_job").LogicalName, targetEntity.GetAttributeValue<EntityReference>("dia_job").Id);
+                tracingService.Trace("5" );
+                jobUpdate.Attributes["dia_variance"] = variance;
+                tracingService.Trace("6");
+                jobUpdate.Attributes["dia_variancepercentage"] = variancepercentage ;
+                tracingService.Trace("7");
+                service.Update(jobUpdate);
+                tracingService.Trace("8");
+
+            }
+
+
         }
         public void JobPostUpdateStarted(IOrganizationService service, IPluginExecutionContext context, ITracingService tracingService)
         {
@@ -201,7 +245,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                         var statuscode = targetEntity.GetAttributeValue<OptionSetValue>("statuscode");
                         var quantity = targetEntity.GetAttributeValue<decimal?>("dia_quantity") == null ? 0 : targetEntity.GetAttributeValue<decimal>("dia_quantity");
                         var jobInformation = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_batch"));
-                        var batchComposition = jobInformation != null && jobInformation.Contains("dia_batch") ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_batch").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_batch").Id, new ColumnSet("dia_batchcomposition")) : null;
+                        //var batchComposition = jobInformation != null && jobInformation.Contains("dia_batch") ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_batch").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_batch").Id, new ColumnSet("dia_batchcomposition")) : null;
                         tracingService.Trace("2");
 
                         EntityCollection resultsquery = JobLogic.GetDestinationQuantity(service, targetEntity);
@@ -219,7 +263,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                                 sourceVesselUpdate.Id = vesselInformation.Id;
                                 sourceVesselUpdate.Attributes["dia_occupation"] = vesselInformation.GetAttributeValue<decimal>("dia_occupation") + destinationVessel.GetAttributeValue<decimal>("dia_quantity"); // ocupação do vessel + quantity do job destination vessel.
                                 sourceVesselUpdate.Attributes["dia_batch"] = destinationVessel != null ? destinationVessel.GetAttributeValue<EntityReference>("dia_batch") : null;
-                                sourceVesselUpdate.Attributes["dia_composition"] = batchComposition != null ? batchComposition.GetAttributeValue<EntityReference>("dia_batchcomposition") : null; //Composition que vem do batch     
+                                //sourceVesselUpdate.Attributes["dia_composition"] = batchComposition != null ? batchComposition.GetAttributeValue<EntityReference>("dia_batchcomposition") : null; //Composition que vem do batch     
                                 sourceVesselUpdate.Attributes["dia_stage"] = stage;
 
                                 tracingService.Trace("5");
@@ -943,6 +987,46 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     }
 
                 }
+            }
+        }
+
+        public void JobDestinationVesselPostCreate(IOrganizationService service, IPluginExecutionContext context, ITracingService tracingService) {
+            
+            Entity targetEntity = (Entity)context.InputParameters["Target"];
+            var JobDestLogic = new JobDestinationEntity();
+            tracingService.Trace("1");
+            EntityCollection GetDestinationQuantity = JobDestLogic.GetDestinationQuantity(service, targetEntity.GetAttributeValue<EntityReference>("dia_job"));
+            tracingService.Trace("2");
+            var JobSourceLogic = new JobSourceEntity();
+            EntityCollection GetQuantity = JobSourceLogic.GetQuantity(service, targetEntity.GetAttributeValue<EntityReference>("dia_job"));
+            tracingService.Trace("3");
+            var jobType = service.Retrieve(targetEntity.GetAttributeValue<EntityReference>("dia_job").LogicalName, targetEntity.GetAttributeValue<EntityReference>("dia_job").Id, new ColumnSet("dia_type"));
+            tracingService.Trace("4");
+            var variance = Convert.ToInt32(GetQuantity.Entities[0].GetAttributeValue<AliasedValue>("Quantity").Value) - Convert.ToInt32(GetDestinationQuantity.Entities[0].GetAttributeValue<AliasedValue>("Quantity").Value);
+            if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440001) {
+                tracingService.Trace("5");
+                decimal variancepercentage = 0;
+               
+                if (Convert.ToInt32(GetDestinationQuantity.Entities[0].GetAttributeValue<AliasedValue>("Quantity").Value) != 0)
+                {
+
+                    variancepercentage = (variance / Convert.ToDecimal(GetQuantity.Entities[0].GetAttributeValue<AliasedValue>("Quantity").Value))*100;
+                    
+                    tracingService.Trace("variancePercentagem" + variancepercentage);
+
+                }
+              
+                
+                tracingService.Trace("variance" + variance);
+                var jobUpdate = new Entity(targetEntity.GetAttributeValue<EntityReference>("dia_job").LogicalName, targetEntity.GetAttributeValue<EntityReference>("dia_job").Id);
+                tracingService.Trace("6");
+                jobUpdate.Attributes["dia_variance"] = variance;
+                tracingService.Trace("7");
+                jobUpdate.Attributes["dia_variancepercentage"] = variancepercentage;
+                tracingService.Trace("8");
+                service.Update(jobUpdate);
+                tracingService.Trace("9");
+
             }
         }
     }

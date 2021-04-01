@@ -2,6 +2,9 @@ function OnLoad(executionContext)
 {
 	var formContext = executionContext.getFormContext();
 	//SaveForm(executionContext);
+
+	percentage(executionContext);
+	formContext.getAttribute("dia_level").addOnChange(percentage);
 	formContext.getAttribute("dia_type").addOnChange(jobTypeOnChange);
 	formContext.getAttribute("dia_schelduledstart").addOnChange(startDateOnChange);
 	formContext.getAttribute("dia_schelduledfinish").addOnChange(endDateLimit);
@@ -44,6 +47,8 @@ function EstimatedDuration(executionContext) {
 
 
 }
+
+
 
 
 
@@ -176,18 +181,22 @@ function jobTypeOnChange(executionContext) {
 
 	var intake = formContext.getAttribute('dia_type').getValue();
 	
-    if(intake == 914440000){ //InSitu
+	if (intake == 914440000) { //InSitu
+		formContext.ui.tabs.get("Composition").setVisible(false);	
         setVisibleControl(formContext, "dia_batch", false);
 		setVisibleControl(formContext, "SourceVessel", false);
 		setVisibleControl(formContext, "DestinationVessel", false);
 		setVisibleControl(formContext, "JobDestinationVessel", true);
 		setVisibleControl(formContext, "dia_quantity", false);
-		setRequiredLevelControl(formContext, "dia_additive", "required");
-		//setRequiredLevelControl(formContext, "dia_quantity", "required");
 		
     }
-    else if(intake == 914440001){ //Transfer
-        setVisibleControl(formContext, "dia_batch", false);
+	else if (intake == 914440001) { //Transfer
+		formContext.ui.tabs.get("Composition").setVisible(false);	
+		setVisibleControl(formContext, "dia_batch", false);
+		setVisibleControl(formContext, "dia_variance", true);
+		setVisibleControl(formContext, "dia_variancepercentage", true);
+		setVisibleControl(formContext, "dia_reason", true);
+
 		setVisibleControl(formContext, "SourceVessel", true);
 		setVisibleControl(formContext, "DestinationVessel", true);
 		setVisibleControl(formContext, "JobDestinationVessel", false);
@@ -196,7 +205,10 @@ function jobTypeOnChange(executionContext) {
 		//setRequiredLevelControl(formContext, "dia_quantity", "required");
 		
     }
-	else if(intake == 914440002){ //Intake
+	else if (intake == 914440002) { //Intake
+
+
+		 formContext.ui.tabs.get("Composition").setVisible(true);	
         setVisibleControl(formContext, "dia_batch", true);
 		setVisibleControl(formContext, "SourceVessel", false);
 		setVisibleControl(formContext, "DestinationVessel", true);
@@ -204,15 +216,22 @@ function jobTypeOnChange(executionContext) {
 		setRequiredLevelControl(formContext, "dia_additive", "none");
 		setRequiredLevelControl(formContext, "dia_quantity", "required");
 		formContext.getControl("dia_quantity").setDisabled(false);
+		setVisibleControl(formContext, "dia_variance", false);
+		setVisibleControl(formContext, "dia_variancepercentage", false);
+		setVisibleControl(formContext, "dia_reason", false);
 		
     }
-	else if(intake == 914440003){ //Dispatch
+	else if (intake == 914440003) { //Dispatch
+		formContext.ui.tabs.get("Composition").setVisible(false);	
         setVisibleControl(formContext, "dia_batch", false);
 		setVisibleControl(formContext, "SourceVessel", true);
 		setVisibleControl(formContext, "DestinationVessel", false);
 		setVisibleControl(formContext, "JobDestinationVessel", false);
 		setRequiredLevelControl(formContext, "dia_additive", "none");
 		setRequiredLevelControl(formContext, "dia_quantity", "required");
+		setVisibleControl(formContext, "dia_variance", false);
+		setVisibleControl(formContext, "dia_variancepercentage", false);
+		setVisibleControl(formContext, "dia_reason", false);
 		
     }
 }
@@ -382,6 +401,26 @@ function FilterJobTemplate(formContext) {
 		}
 	};
 	reqjobtype.send();
+}
+
+function percentage(executionContext) {
+	var formContext = executionContext.getFormContext();
+	var level = formContext.getAttribute('dia_level').getValue();
+
+	if (level == 914440000) {
+
+		Xrm.Page.ui.tabs.get('Composition').sections.get('Summary').setVisible(true);
+		Xrm.Page.ui.tabs.get('Composition').sections.get('Detail').setVisible(false);
+	}
+
+
+	else if (level == 914440001) {
+
+		Xrm.Page.ui.tabs.get('Composition').sections.get('Summary').setVisible(false);
+		Xrm.Page.ui.tabs.get('Composition').sections.get('Detail').setVisible(true);
+
+	}
+
 }
 
 

@@ -80,6 +80,7 @@
     <Compile Include="Entities\JobDestinationEntity.cs" />
     <Compile Include="Entities\JobEntity.cs" />
     <Compile Include="Entities\JobSourceEntity.cs" />
+    <Compile Include="JobDestinationVesselPostCreate.cs" />
     <Compile Include="JobDestinationVesselPreCreate.cs" />
     <Compile Include="JobPostCreate.cs" />
     <Compile Include="JobPostUpdate.cs" />

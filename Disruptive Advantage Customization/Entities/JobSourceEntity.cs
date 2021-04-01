@@ -1,10 +1,6 @@
 ﻿using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Disruptive_Advantage_Customization.Entities
 {
@@ -60,6 +56,27 @@ namespace Disruptive_Advantage_Customization.Entities
             EntityCollection resultsquery = service.RetrieveMultiple(query);
 
             return resultsquery;
+        }
+
+        public EntityCollection GetQuantity(IOrganizationService service, EntityReference job)
+        {
+
+            // Instantiate QueryExpression query
+            var fetchXml = $@"
+             <fetch aggregate='true'>
+             <entity name='dia_jobsourcevessel'>
+             <attribute name='dia_quantity' alias='Quantity' aggregate='sum' />
+             <filter>
+             <condition attribute='dia_job' operator='eq' value='{job.Id}'/>
+             </filter>
+             </entity>
+             </fetch>";
+            
+            var Quantity = service.RetrieveMultiple(new FetchExpression(fetchXml));
+
+            return Quantity;
+
+
         }
     }
 }
