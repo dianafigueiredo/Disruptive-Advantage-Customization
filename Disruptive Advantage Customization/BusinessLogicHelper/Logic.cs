@@ -447,6 +447,26 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                         #endregion
                     }
 
+
+                    //if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440002)
+                    //{
+
+                    //    #region Update Composition Detail
+
+                    //    var jobdestination = new JobDestinationEntity();
+                    //    var jobInformation = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_Vessel"));
+                    //    var Composition = jobInformation != null && jobInformation.Contains("dia_Vessel") ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_Vessel").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_Vessel").Id, new ColumnSet("dia_vesselcomposition")) : null;
+
+                    //    EntityCollection JobDestinationVessel = jobdestination.GetCompositionVessel(service,  jobdestination);
+
+
+
+                    //    #endregion
+
+
+
+                    //}
+
                     #region update additive stock
 
                     tracingService.Trace("10");

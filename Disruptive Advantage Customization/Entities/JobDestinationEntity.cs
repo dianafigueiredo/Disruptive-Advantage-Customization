@@ -62,7 +62,30 @@ namespace Disruptive_Advantage_Customization.Entities
 
         }
 
+        public EntityCollection GetCompositionVessel(IOrganizationService service, EntityReference jobdestination) {
 
+            // Instantiate QueryExpression query
+            var query = new QueryExpression("dia_jobdestinationvessel");
+            query.TopCount = 50;
+
+            // Add columns to query.ColumnSet
+            query.ColumnSet.AddColumns("dia_vessel", "dia_vesseldropdown");
+
+            // Define filter query.Criteria
+            query.Criteria.AddCondition("dia_jobdestinationvesselid", ConditionOperator.Equal, jobdestination.Id);
+
+            // Add link-entity query_dia_vessel
+            var query_dia_vessel = query.AddLink("dia_vessel", "dia_vessel", "dia_vesselid");
+
+            // Add columns to query_dia_vessel.Columns
+            query_dia_vessel.Columns.AddColumns("dia_composition");
+
+            var Composition = service.RetrieveMultiple(query);
+
+            return Composition;
+
+
+        }
 
 
 
