@@ -271,6 +271,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                                 service.Update(sourceVesselUpdate);
 
                                 CreateTransaction(service, tracingService, vesselInformation, jobInformation, destinationVessel, stage, targetEntity);
+                                CreateVesselBatchComposition(service, tracingService, destinationVessel);
                                 tracingService.Trace("6");
                             }
                             //update statuscode job destination vessel para completed
@@ -448,24 +449,25 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     }
 
 
-                    //if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440002)
-                    //{
+                    if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440002)
+                    {
 
-                    //    #region Update Composition Detail
+                        #region Update Composition Detail
 
-                    //    var jobdestination = new JobDestinationEntity();
-                    //    var jobInformation = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_Vessel"));
-                    //    var Composition = jobInformation != null && jobInformation.Contains("dia_Vessel") ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_Vessel").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_Vessel").Id, new ColumnSet("dia_vesselcomposition")) : null;
+                        var jobdestination = new JobDestinationEntity();
+                        var jobInformation = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_Vessel"));
+                        var composition = jobInformation.GetAttributeValue<EntityReference>("dia_vesselcomposition");
+                        var Composition = jobInformation != null && jobInformation.Contains("dia_Vessel") ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_Vessel").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_Vessel").Id, new ColumnSet("dia_vesselcomposition")) : null;
 
-                    //    EntityCollection JobDestinationVessel = jobdestination.GetCompositionVessel(service,  jobdestination);
-
-
-
-                    //    #endregion
+                        EntityCollection JobDestinationVessel = jobdestination.GetCompositionVessel(service, composition);
 
 
 
-                    //}
+                        #endregion
+
+
+
+                    }
 
                     #region update additive stock
 
@@ -598,7 +600,15 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
             service.Create(createTransaction);
         }
 
+        public void CreateVesselBatchComposition(IOrganizationService service, ITracingService tracingService, Entity destinationVessel)
+        {
+            var createVesselBatch = new Entity("dia_vesselbatchcomposition");
+            createVesselBatch.Attributes["dia_batch"] = destinationVessel.GetAttributeValue<EntityReference>("dia_batch");
+            createVesselBatch.Attributes["dia_vessel"] = destinationVessel.GetAttributeValue<EntityReference>("dia_vessel");
 
+            service.Create(createVesselBatch);
+
+        }
         /*public void CreateTransactionAdditiveStock(IOrganizationService service, ITracingService tracingService, Entity AdditiveInfo, Entity Storage, Entity job ){
 
             var createTransaction = new Entity("dia_additivestocktransaction");
@@ -1048,6 +1058,23 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                 tracingService.Trace("9");
 
             }
+        }
+
+        public void VesselPostCreate(IOrganizationService service, IPluginExecutionContext context, ITracingService tracingService) {
+
+            Entity targetEntity = (Entity)context.InputParameters["Target"];
+
+            if (!targetEntity.Contains("dia_occupation"))
+            {
+
+                var VesselUpdate = new Entity(targetEntity.LogicalName, targetEntity.Id);
+                VesselUpdate.Attributes["dia_occupation"] = 0.00;
+                service.Update(VesselUpdate);
+
+            }
+
+
+
         }
     }
 }
