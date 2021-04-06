@@ -183,7 +183,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                 tracingService.Trace("5" );
                 jobUpdate.Attributes["dia_variance"] = variance;
                 tracingService.Trace("6");
-                jobUpdate.Attributes["dia_variancepercentage"] = variancepercentage ;
+                jobUpdate.Attributes["dia_variancepercentage"] = variancepercentage;
                 tracingService.Trace("7");
                 service.Update(jobUpdate);
                 tracingService.Trace("8");
@@ -229,14 +229,16 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
         }
         public void JobPostUpdateCompleted(IOrganizationService service, IPluginExecutionContext context, ITracingService tracingService)
         {
-
+            tracingService.Trace("post update 1");
             if (context != null && context.InputParameters != null && context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
             {
+                tracingService.Trace("post update 2");
                 Entity targetEntity = (Entity)context.InputParameters["Target"];
 
                 #region update job status reason = completed
                 if (targetEntity.Contains("statuscode") && targetEntity.GetAttributeValue<OptionSetValue>("statuscode").Value == 914440005)//Completed
                 {
+                    tracingService.Trace("post update 3");
                     var JobLogic = new JobEntity();
                     var jobType = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_type"));
                     if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440002)//intake
@@ -271,7 +273,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                                 service.Update(sourceVesselUpdate);
 
                                 CreateTransaction(service, tracingService, vesselInformation, jobInformation, destinationVessel, stage, targetEntity);
-                                CreateVesselBatchComposition(service, tracingService, destinationVessel);
+                                CreateUpdateVesselBatchComposition(service, tracingService, destinationVessel, targetEntity);
                                 tracingService.Trace("6");
                             }
                             //update statuscode job destination vessel para completed
@@ -289,7 +291,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                             BatchVesselUpdate.Attributes["dia_batch"] = jobInformation.GetAttributeValue<EntityReference>("dia_batch");
 
                             tracingService.Trace("7");
-                            service.Update(vesselUpdate);
+                            service.Update(BatchVesselUpdate);
                         }
                     }
                     if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440001)//transfer
@@ -449,7 +451,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     }
 
 
-                    if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440002)
+                    /*if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440002)
                     {
 
                         #region Update Composition Detail
@@ -464,10 +466,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
 
                         #endregion
-
-
-
-                    }
+                    }*/
 
                     #region update additive stock
 
@@ -600,13 +599,73 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
             service.Create(createTransaction);
         }
 
-        public void CreateVesselBatchComposition(IOrganizationService service, ITracingService tracingService, Entity destinationVessel)
+        public void CreateUpdateVesselBatchComposition(IOrganizationService service, ITracingService tracingService, Entity destinationVessel, Entity targetEntity)
         {
+            tracingService.Trace("1");
             var createVesselBatch = new Entity("dia_vesselbatchcomposition");
+            tracingService.Trace("2");
             createVesselBatch.Attributes["dia_batch"] = destinationVessel.GetAttributeValue<EntityReference>("dia_batch");
+            tracingService.Trace("3");
             createVesselBatch.Attributes["dia_vessel"] = destinationVessel.GetAttributeValue<EntityReference>("dia_vessel");
+            tracingService.Trace("4");
 
-            service.Create(createVesselBatch);
+            Guid productId = service.Create(createVesselBatch);
+            tracingService.Trace("5");
+            var query = new QueryExpression("dia_batchcompositiondetail");
+
+            query.ColumnSet.AllColumns = true;
+            query.Criteria.AddCondition("dia_job", ConditionOperator.Equal, targetEntity.Id);
+
+            EntityCollection resultsQuery = service.RetrieveMultiple(query);
+            tracingService.Trace("6");
+            foreach (var composition in resultsQuery.Entities)
+            {
+                tracingService.Trace("7");
+
+                var vintage = composition.GetAttributeValue<EntityReference>("dia_vintage");
+
+                tracingService.Trace("8");
+
+                var variety = composition.GetAttributeValue<EntityReference>("dia_variety");
+
+                tracingService.Trace("9");
+
+                var region = composition.GetAttributeValue<EntityReference>("dia_region");
+
+                tracingService.Trace("10");
+
+                var totalPercentage = composition.GetAttributeValue<decimal>("dia_percentage");
+
+                tracingService.Trace("11");
+
+                var productCompositionCreate = new Entity("dia_productcomposition");
+
+                tracingService.Trace("12");
+
+                productCompositionCreate.Attributes["dia_vintage"] = vintage;
+
+                tracingService.Trace("13");
+
+                productCompositionCreate.Attributes["dia_variety"] = variety;
+
+                tracingService.Trace("14");
+
+                productCompositionCreate.Attributes["dia_region"] = region;
+
+                tracingService.Trace("15");
+
+                productCompositionCreate.Attributes["dia_percentage"] = totalPercentage;
+
+                tracingService.Trace("16");
+
+                productCompositionCreate.Attributes["dia_product"] = new EntityReference("dia_vesselbatchcomposition", productId);
+
+                tracingService.Trace("17");
+
+                service.Create(productCompositionCreate);
+                tracingService.Trace("18");
+            }
+            tracingService.Trace("19");
 
         }
         /*public void CreateTransactionAdditiveStock(IOrganizationService service, ITracingService tracingService, Entity AdditiveInfo, Entity Storage, Entity job ){
