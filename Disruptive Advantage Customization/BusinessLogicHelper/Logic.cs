@@ -604,6 +604,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
             tracingService.Trace("1");
             var createVesselBatch = new Entity("dia_vesselbatchcomposition");
             tracingService.Trace("2");
+            createVesselBatch.Attributes["dia_name"] = destinationVessel.GetAttributeValue<EntityReference>("dia_vessel").Name + " " + destinationVessel.GetAttributeValue<EntityReference>("dia_batch").Name;
             createVesselBatch.Attributes["dia_batch"] = destinationVessel.GetAttributeValue<EntityReference>("dia_batch");
             tracingService.Trace("3");
             createVesselBatch.Attributes["dia_vessel"] = destinationVessel.GetAttributeValue<EntityReference>("dia_vessel");
@@ -641,7 +642,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                 var productCompositionCreate = new Entity("dia_productcomposition");
 
                 tracingService.Trace("12");
-
+                productCompositionCreate.Attributes["dia_name"] = destinationVessel.GetAttributeValue<EntityReference>("dia_vessel").Name + " " + destinationVessel.GetAttributeValue<EntityReference>("dia_batch").Name;
                 productCompositionCreate.Attributes["dia_vintage"] = vintage;
 
                 tracingService.Trace("13");
