@@ -102,14 +102,14 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     {
                         throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " does not have enough capacity. Max. Capacity: " + Decimal.ToInt32(vesselCapacity) + "L");
                     }
-                    if (plannedvesselOccupation != 0 && jobtype.Value != 914440001)
+                    /*if (plannedvesselOccupation != 0 && jobtype.Value != 914440001)
                     {
                         throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] + " is not empty");
                     }
                     if (vesselOccupation > 0 && jobtype.Value != 914440001)
                     {
                         throw new InvalidPluginExecutionException("Sorry but the vessel " + vesselEnt["dia_name"] + " at this date " + jobEnt["dia_schelduledstart"] + " is not empty");
-                    }
+                    }*/
                 }
 
                 if (jobtype != null && jobtype.Value == 914440000 || jobtype.Value == 914440003) //In-Situ && Dispatch
@@ -611,62 +611,125 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
             tracingService.Trace("4");
 
             Guid productId = service.Create(createVesselBatch);
-            tracingService.Trace("5");
-            var query = new QueryExpression("dia_batchcompositiondetail");
+            tracingService.Trace("5: " + productId);
 
+            var query = new QueryExpression("dia_productcomposition");
             query.ColumnSet.AllColumns = true;
             query.Criteria.AddCondition("dia_job", ConditionOperator.Equal, targetEntity.Id);
 
-            EntityCollection resultsQuery = service.RetrieveMultiple(query);
-            tracingService.Trace("6");
-            foreach (var composition in resultsQuery.Entities)
+            EntityCollection resultsJobProductCompositions = service.RetrieveMultiple(query);
+
+            //Antes disto verificar se o vessel já tem conteúdo.
+            //Se tiver, vamos buscar o Product, ao product vamos buscar o product composition e acrescentamos ou fazemos blend para o novo product que criamos em cima.
+
+            var hasContent = VerifyVessel(service, tracingService, destinationVessel.GetAttributeValue<EntityReference>("dia_vessel"));
+            tracingService.Trace("has content 0: " + hasContent);
+            if(hasContent == true)
             {
-                tracingService.Trace("7");
+                tracingService.Trace("hasContent 1: " + destinationVessel.GetAttributeValue<EntityReference>("dia_vessel").Id);
 
-                var vintage = composition.GetAttributeValue<EntityReference>("dia_vintage");
+                //var queryProduct = new QueryExpression("dia_vesselbatchcomposition");
+                //queryProduct.TopCount = 1;
+                //queryProduct.ColumnSet.AddColumns("dia_vesselbatchcompositionid");
+                //queryProduct.AddOrder("createdon", OrderType.Descending);
+                //queryProduct.Criteria.AddCondition("dia_vessel", ConditionOperator.Equal, destinationVessel.GetAttributeValue<EntityReference>("dia_vessel").Id);
 
-                tracingService.Trace("8");
+                var fetchXML = $@"<fetch top='2'>
+  <entity name='dia_vesselbatchcomposition' >
+    <attribute name='dia_vesselbatchcompositionid' />
+    <filter>
+      <condition attribute='dia_vessel' operator='eq' value='{destinationVessel.GetAttributeValue<EntityReference>("dia_vessel").Id}' />
+    </filter>
+    <order attribute='createdon' descending='true' />
+  </entity>
+</fetch>";
 
-                var variety = composition.GetAttributeValue<EntityReference>("dia_variety");
+                var resultProducts = service.RetrieveMultiple(new FetchExpression(fetchXML));
 
-                tracingService.Trace("9");
+                if(resultProducts.Entities.Count > 1)
+                {
+                    tracingService.Trace(JsonHelper.JsonSerializer(resultProducts.Entities));
+                    tracingService.Trace("hasContent 2: " + resultProducts.Entities[1].GetAttributeValue<Guid>("dia_vesselbatchcompositionid"));
+                    tracingService.Trace("hasContent 2: " + resultProducts.Entities[1].Id);
 
-                var region = composition.GetAttributeValue<EntityReference>("dia_region");
+                    var queryProductComposition = new QueryExpression("dia_productcomposition");
+                    queryProductComposition.ColumnSet.AddColumns("dia_percentage", "dia_vintage", "dia_region", "dia_variety");
+                    queryProductComposition.Criteria.AddCondition("dia_product", ConditionOperator.Equal, resultProducts.Entities[1].GetAttributeValue<Guid>("dia_vesselbatchcompositionid"));
 
-                tracingService.Trace("10");
+                    var resultProductCompositions = service.RetrieveMultiple(queryProductComposition);
 
-                var totalPercentage = composition.GetAttributeValue<decimal>("dia_percentage");
+                    foreach (var productComposition in resultProductCompositions.Entities)
+                    {
+                        tracingService.Trace("hasContent 3");
 
-                tracingService.Trace("11");
+                        var created = false;
+                        foreach (var jobProductComposition in resultsJobProductCompositions.Entities)
+                        {
+                            tracingService.Trace("hasContent 4");
 
-                var productCompositionCreate = new Entity("dia_productcomposition");
+                            var equalVintage = false;
+                            var equalVariety = false;
+                            var equalRegion = false;
 
-                tracingService.Trace("12");
-                productCompositionCreate.Attributes["dia_name"] = destinationVessel.GetAttributeValue<EntityReference>("dia_vessel").Name + " " + destinationVessel.GetAttributeValue<EntityReference>("dia_batch").Name;
-                productCompositionCreate.Attributes["dia_vintage"] = vintage;
+                            if (productComposition.GetAttributeValue<EntityReference>("dia_vintage").Id == jobProductComposition.GetAttributeValue<EntityReference>("dia_vintage").Id) equalVintage = true;
+                            if (productComposition.GetAttributeValue<EntityReference>("dia_region").Id == jobProductComposition.GetAttributeValue<EntityReference>("dia_region").Id) equalRegion = true;
+                            if (productComposition.GetAttributeValue<EntityReference>("dia_variety").Id == jobProductComposition.GetAttributeValue<EntityReference>("dia_variety").Id) equalVariety = true;
 
-                tracingService.Trace("13");
+                            if(equalVintage == true && equalVariety == true && equalRegion == true)
+                            {
+                                tracingService.Trace("hasContent 5");
 
-                productCompositionCreate.Attributes["dia_variety"] = variety;
+                                var newProductCompositionBlended = new Entity("dia_productcomposition");
+                                newProductCompositionBlended["dia_percentage"] = productComposition.GetAttributeValue<decimal>("dia_percentage") + jobProductComposition.GetAttributeValue<decimal>("dia_percentage") > Convert.ToDecimal(100) ? Convert.ToDecimal(100) : productComposition.GetAttributeValue<decimal>("dia_percentage") + jobProductComposition.GetAttributeValue<decimal>("dia_percentage");
+                                newProductCompositionBlended["dia_vintage"] = productComposition.GetAttributeValue<EntityReference>("dia_vintage");
+                                newProductCompositionBlended["dia_region"] = productComposition.GetAttributeValue<EntityReference>("dia_region");
+                                newProductCompositionBlended["dia_variety"] = productComposition.GetAttributeValue<EntityReference>("dia_variety");
+                                newProductCompositionBlended["dia_product"] = new EntityReference("dia_vesselbatchcomposition", productId);
 
-                tracingService.Trace("14");
+                                service.Create(newProductCompositionBlended);
 
-                productCompositionCreate.Attributes["dia_region"] = region;
+                                created = true;
+                            }
+                        }
+                        if (created == true) continue;
+                        var newProductComposition = new Entity("dia_productcomposition");
+                        newProductComposition["dia_percentage"] = productComposition.GetAttributeValue<decimal>("dia_percentage");
+                        newProductComposition["dia_vintage"] = productComposition.GetAttributeValue<EntityReference>("dia_vintage");
+                        newProductComposition["dia_region"] = productComposition.GetAttributeValue<EntityReference>("dia_region");
+                        newProductComposition["dia_variety"] = productComposition.GetAttributeValue<EntityReference>("dia_variety");
+                        newProductComposition["dia_product"] = new EntityReference("dia_vesselbatchcomposition", productId);
 
-                tracingService.Trace("15");
+                        service.Create(newProductComposition);
+                    }
+                    var oldProductDeactivate = new Entity(resultProducts.Entities[1].LogicalName, resultProducts.Entities[1].Id);
+                    oldProductDeactivate["statecode"] = new OptionSetValue(0);
+                    //oldProductDeactivate["statecode"] = 0;
 
-                productCompositionCreate.Attributes["dia_percentage"] = totalPercentage;
+                    service.Update(oldProductDeactivate);
+                }
 
-                tracingService.Trace("16");
-
-                productCompositionCreate.Attributes["dia_product"] = new EntityReference("dia_vesselbatchcomposition", productId);
-
-                tracingService.Trace("17");
-
-                service.Create(productCompositionCreate);
-                tracingService.Trace("18");
             }
-            tracingService.Trace("19");
+            else
+            {
+                foreach (var composition in resultsJobProductCompositions.Entities)
+                {
+                    var vintage = composition.GetAttributeValue<EntityReference>("dia_vintage");
+                    var variety = composition.GetAttributeValue<EntityReference>("dia_variety");
+                    var region = composition.GetAttributeValue<EntityReference>("dia_region");
+                    var totalPercentage = composition.GetAttributeValue<decimal>("dia_percentage");
+
+                    var productCompositionCreate = new Entity("dia_productcomposition");
+
+                    productCompositionCreate.Attributes["dia_name"] = destinationVessel.GetAttributeValue<EntityReference>("dia_vessel").Name + " " + destinationVessel.GetAttributeValue<EntityReference>("dia_batch").Name;
+                    productCompositionCreate.Attributes["dia_vintage"] = vintage;
+                    productCompositionCreate.Attributes["dia_variety"] = variety;
+                    productCompositionCreate.Attributes["dia_region"] = region;
+                    productCompositionCreate.Attributes["dia_percentage"] = totalPercentage;
+                    productCompositionCreate.Attributes["dia_product"] = new EntityReference("dia_vesselbatchcomposition", productId);
+                    service.Create(productCompositionCreate);
+                }
+            }
+
 
         }
         /*public void CreateTransactionAdditiveStock(IOrganizationService service, ITracingService tracingService, Entity AdditiveInfo, Entity Storage, Entity job ){
@@ -1135,6 +1198,13 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
 
 
+        }
+        public bool VerifyVessel(IOrganizationService service, ITracingService tracingservice, EntityReference vessel)
+        {
+            var vesselInfo = service.Retrieve(vessel.LogicalName, vessel.Id, new ColumnSet("dia_occupation"));
+
+            if (vesselInfo.GetAttributeValue<decimal>("dia_occupation") != 0) return true;
+            return false;
         }
     }
 }
