@@ -87,7 +87,6 @@
     <Compile Include="JobSourceVesselPostCreate.cs" />
     <Compile Include="JobSourceVesselPostUpdate.cs" />
     <Compile Include="PostCreateRegionVintageVariety.cs" />
-    <Compile Include="ProductCompositionPostCreate.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VesselPostCreate.cs" />
     <Compile Include="Workflows\GetVesselAvailability.cs" />
