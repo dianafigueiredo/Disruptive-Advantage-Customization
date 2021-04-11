@@ -218,11 +218,11 @@ function PopulateFields(executionContext) {
 
     if (jobtype == 914440000) { //In-Situ
 
-        if (formContext.getAttribute("dia_vessel").getValue() == null ) return;
+        if (formContext.getAttribute("dia_vessel").getValue() == null) return;
 
         var vesselId = formContext.getAttribute("dia_vessel").getValue()[0].id;
 
-       
+
 
         var fetchXml = [
             "<fetch>",
@@ -295,7 +295,7 @@ function PopulateFields(executionContext) {
         var lookupBatch = new Array();
         lookupBatch[0] = new Object();
         if (formContext.getAttribute("dia_vessel").getValue() == null) return;
-        
+
         var vesselId = formContext.getAttribute("dia_vessel").getValue()[0].id;
 
         var fetchXmlVessel = [
@@ -475,6 +475,13 @@ function PopulateFields(executionContext) {
                         var results = JSON.parse(this.response);
                         if (results.value != null) {
                             for (var i = 0; i < results.value.length; i++) {
+
+                                var vesselId = Xrm.Page.getAttribute("dia_vesseldropdown").getValue().split("_ ")[1];
+                                var vesselQuantity = GetQuantity(formContext, vesselId);
+
+
+
+
                                 var quantityjob = results.value[i]["dia_quantity"];
                                 var prevolume = formContext.getAttribute("dia_prevolume").getValue();
 
@@ -498,6 +505,50 @@ function PopulateFields(executionContext) {
         }
 
     }
+}
+
+function GetQuantity(formContext, vesselId) {
+    var VesselQuantity = "";
+
+    if (formContext.getAttribute("dia_vesseldropdown").getValue() == null) return;
+
+    var fetchXmlVessel = [
+        "<fetch>",
+        "  <entity name='dia_vessel'>",
+        "    <attribute name='dia_occupation' />",
+        "    <filter>",
+        "      <condition attribute='dia_vesselid' operator='eq' value='", vesselId, "'/>",
+        "    </filter>",
+        "  </entity>",
+        "</fetch>",
+    ].join("");
+
+    var reqVessel = new XMLHttpRequest();
+    reqVessel.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_vessels?fetchXml=" + encodeURIComponent(fetchXmlVessel), false);
+    reqVessel.setRequestHeader("OData-MaxVersion", "4.0");
+    reqVessel.setRequestHeader("OData-Version", "4.0");
+    reqVessel.setRequestHeader("Accept", "application/json");
+    reqVessel.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+    reqVessel.onreadystatechange = function () {
+        if (this.readyState === 4) {
+            reqVessel.onreadystatechange = null;
+            if (this.status === 200) {
+                var results = JSON.parse(this.response);
+                if (results.value != null) {
+                    for (var i = 0; i < results.value.length; i++) {
+                        VesselQuantity = results.value[i]["dia_occupation"];
+
+                    }
+                }
+            }
+
+        }
+    };
+    reqVessel.send();
+
+
+    return VesselQuantity;
+
 }
 
 function GetNameBatch(formContext, batchId) {
@@ -643,7 +694,7 @@ function GetPlannedInAdvanced(formContext, vesselId, scheduledStart) {
                         formContext.getAttribute("dia_quantity").setValue(occupation);
                         formContext.getAttribute("dia_batch").setValue(lookupBatch);
                         formContext.getAttribute("dia_stage").setValue(lookupStage);
-                        
+
                     }
                 }
             }

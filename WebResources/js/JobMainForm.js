@@ -173,7 +173,7 @@ function TypeOnChange(executionContext) {
 
 function jobTypeOnChange(executionContext) {
 	var formContext = executionContext.getFormContext();
-	formContext.getAttribute("dia_template").setValue();
+	//formContext.getAttribute("dia_template").setValue();
 	//TypeOnChange(executionContext);
 	formContext.getControl("dia_template").addPreSearch(function () {
 		FilterJobTemplate(formContext);
