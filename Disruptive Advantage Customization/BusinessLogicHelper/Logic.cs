@@ -56,7 +56,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
                 var vessEmpty = JobDestinationLogic.GetSourceVesselQuantity(service, destVessel, jobEnt);
                 var qtdDrop = logiHelper.SumOfQuantities(vessEmpty, "dia_quantity", tracingService);
-                tracingService.Trace("4");
+                tracingService.Trace("4entrou");
 
                 #endregion JobsToEmpty
 
@@ -65,12 +65,12 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                 var capVessel = vesselEnt.GetAttributeValue<decimal>("dia_capacity");
                 var qtdJobDestVessel = jobDestination.GetAttributeValue<decimal>("dia_quantity");
 
-                tracingService.Trace("5");
+                tracingService.Trace("5 entrou");
 
                 var finalOccupation = logiHelper.FinalOccupation(capVessel, occVessel, qtdJobDestVessel, qtdFill, qtdDrop);
 
-                tracingService.Trace("capVessel: " + capVessel);
-                tracingService.Trace("occVessel: " + occVessel);
+                tracingService.Trace("capVessel entrou: " + capVessel);
+                tracingService.Trace("occVessel entrou: " + occVessel);
                 tracingService.Trace("qtdJobDestVessel: " + qtdJobDestVessel);
                 tracingService.Trace("qtdFill: " + qtdFill);
                 tracingService.Trace("qtdDrop: " + qtdDrop);
@@ -225,6 +225,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                             }
                         }
                     }
+
                 }
             }
         }
@@ -297,45 +298,67 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     }
                     if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440001)//transfer
                     {
+                        tracingService.Trace("ENTROU ");
                         var jobInformation = service.Retrieve(targetEntity.LogicalName, targetEntity.Id, new ColumnSet("dia_batch"));
                         var batchComposition = jobInformation != null && jobInformation.Contains("dia_batch") ? service.Retrieve(jobInformation.GetAttributeValue<EntityReference>("dia_batch").LogicalName, jobInformation.GetAttributeValue<EntityReference>("dia_batch").Id, new ColumnSet("dia_batchcomposition")) : null;
                         //Quando o job fica completed passar o conteúdo do source vessel para o destination vessel. Ainda não está implementado destination vessel, só no source.
                         EntityCollection resultsSourceVessel = JobLogic.GetSourceQuantity(service, targetEntity);
                         #region Update Destination Vessel Quantity and Composition
-
+                        tracingService.Trace("ENTROU 1 ");
                         EntityCollection resultsQueryJobDestinationVessel = JobLogic.GetDestinationQuantity(service, targetEntity);
 
                         tracingService.Trace("results Count: " + resultsQueryJobDestinationVessel.Entities.Count);
-
+                        tracingService.Trace("ENTROU 2");
                         foreach (var jobdestinationvessel in resultsQueryJobDestinationVessel.Entities)
                         {
+                            tracingService.Trace("ENTROU3 ");
                             var vesselInformation = service.Retrieve(jobdestinationvessel.GetAttributeValue<EntityReference>("dia_vessel").LogicalName, jobdestinationvessel.GetAttributeValue<EntityReference>("dia_vessel").Id, new ColumnSet("dia_occupation", "dia_composition", "dia_location", "dia_stage"));
+                            tracingService.Trace("ENTROU 4 " + vesselInformation);
                             var stage = jobdestinationvessel.GetAttributeValue<EntityReference>("dia_stage") == null ? null : jobdestinationvessel.GetAttributeValue<EntityReference>("dia_stage");
-
+                            tracingService.Trace("ENTROU 5 " + stage);
                             EntityCollection resultsQuantitySourceVessel = JobLogic.GetSourceQuantity(service, targetEntity);
                             //var finalBatch = GetHighestQuantityBatch(service, resultsQuantitySourceVessel, jobdestinationvessel);
-
+                            tracingService.Trace("ENTROU 6 ");
                             var destinationVesselUpdate = new Entity(vesselInformation.LogicalName);
                             destinationVesselUpdate.Id = vesselInformation.Id;
                             destinationVesselUpdate.Attributes["dia_occupation"] = jobdestinationvessel.GetAttributeValue<decimal>("dia_quantity") + vesselInformation.GetAttributeValue<decimal>("dia_occupation");
-                            //destinationVesselUpdate.Attributes["dia_batch"] = jobInformation != null ? jobInformation.GetAttributeValue<EntityReference>("dia_batch") : null;
+
+                            tracingService.Trace("ENTROU 7 " + jobdestinationvessel.GetAttributeValue<decimal>("dia_quantity") + vesselInformation.GetAttributeValue<decimal>("dia_occupation"));
+
+                            //destinationVesselUpdate.Attributes["dia_batch"] = jobInformation != null ? jobInformation.GetAttributeValue<EntityReference>("dia_batch") : null
+
                             tracingService.Trace("batch: " + jobdestinationvessel.GetAttributeValue<EntityReference>("dia_batch"));
+
                             destinationVesselUpdate.Attributes["dia_batch"] = jobdestinationvessel != null ? jobdestinationvessel.GetAttributeValue<EntityReference>("dia_batch") : null;
+
                             //destinationVesselUpdate.Attributes["dia_batch"] = finalBatch;
+
                             destinationVesselUpdate.Attributes["dia_composition"] = batchComposition != null ? batchComposition.GetAttributeValue<EntityReference>("dia_batchcomposition") : null;
+
                             destinationVesselUpdate.Attributes["dia_stage"] = stage;
 
+                            tracingService.Trace("OCUPATION" + jobdestinationvessel.GetAttributeValue<decimal>("dia_quantity") + vesselInformation.GetAttributeValue<decimal>("dia_occupation"));
+
                             service.Update(destinationVesselUpdate);
+                            tracingService.Trace("UPDEITOU");
+
 
                             CreateTransaction(service, tracingService, vesselInformation, jobInformation, jobdestinationvessel, stage, targetEntity);
-
+                            tracingService.Trace("passou mai 1");
                             #region Update jobdestinationvessel statuscode and postvolume
                             var vesselUpdate = new Entity(jobdestinationvessel.LogicalName);
+                            tracingService.Trace("passou mai 2");
                             vesselUpdate.Id = jobdestinationvessel.Id;
+                            tracingService.Trace("passou mai 3");
                             vesselUpdate.Attributes["statecode"] = new OptionSetValue(1); //Inactive
+                            tracingService.Trace("passou mai 4");
                             vesselUpdate.Attributes["statuscode"] = new OptionSetValue(914440002);//Completed
+                            tracingService.Trace("passou mai 5");
                             vesselUpdate.Attributes["dia_postvolume"] = jobdestinationvessel.GetAttributeValue<decimal>("dia_quantity") + jobdestinationvessel.GetAttributeValue<decimal>("dia_prevolume");
+                            tracingService.Trace("passou mai 6");
                             service.Update(vesselUpdate);
+
+                            tracingService.Trace("updeitou outra vez mai 2");
                             #endregion
 
                             CreateDestinationVesselAdditives(service, tracingService, vesselInformation, targetEntity);
@@ -350,13 +373,18 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
                         foreach (var sourceVessel in resultsSourceVessel.Entities)
                         {
+                            tracingService.Trace("entrou no source");
                             if (sourceVessel.GetAttributeValue<EntityReference>("dia_vessel") != null)
                             {
+                                tracingService.Trace("entrou no source 1");
                                 var vesselInformation = service.Retrieve(sourceVessel.GetAttributeValue<EntityReference>("dia_vessel").LogicalName, sourceVessel.GetAttributeValue<EntityReference>("dia_vessel").Id, new ColumnSet("dia_occupation", "dia_composition", "dia_location", "dia_stage"));
+                                tracingService.Trace("entrou no source 2");
                                 var stage = sourceVessel.GetAttributeValue<EntityReference>("dia_stage") == null ? null : sourceVessel.GetAttributeValue<EntityReference>("dia_stage");
-
+                                tracingService.Trace("entrou no source 3");
                                 var sourceVesselUpdate = new Entity(vesselInformation.LogicalName);
+                                tracingService.Trace("entrou no source 4");
                                 sourceVesselUpdate.Id = vesselInformation.Id;
+                                tracingService.Trace("entrou no source 5");
                                 tracingService.Trace("vessel occupation: " + vesselInformation.GetAttributeValue<decimal>("dia_occupation"));
                                 tracingService.Trace("source vessel occupation: " + sourceVessel.GetAttributeValue<decimal>("dia_quantity"));
                                 sourceVesselUpdate.Attributes["dia_occupation"] = vesselInformation.GetAttributeValue<decimal>("dia_occupation") - sourceVessel.GetAttributeValue<decimal>("dia_quantity");
@@ -616,17 +644,21 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
             Guid productId = service.Create(createVesselBatch);
             List<Guid> aux = new List<Guid>();
             List<Guid> prodCompositionToRemove = new List<Guid>();
+            tracingService.Trace("passou mai 1");
 
             var jobDestVesselQuantity = JobDestinationVessel.GetAttributeValue<decimal>("dia_quantity");
-
+            tracingService.Trace("passou mai 2");
             #region Get Destination Vessel Compositions
+            tracingService.Trace("passou mai 3");
 
             EntityCollection destVesselProductCompositions = retrieveDestinationVesselProductCompositions(service, tracingService, JobDestinationVessel);
-
+            tracingService.Trace("passou mai 4");
             #endregion
             List<Entity> sourceJobMix = new List<Entity>();
+            tracingService.Trace("passou mai 5");
             if (resultsSourceVessel.Entities.Count >= 0)
             {
+                tracingService.Trace("passou mai 7");
                 foreach (var sourceVessel in resultsSourceVessel.Entities)
                 {
                     tracingService.Trace("Inside source vessel");
@@ -640,7 +672,7 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                         <order attribute='createdon' descending='true' />
                       </entity>
                     </fetch>";
-
+                    tracingService.Trace("passou mai 9");
                     var resultProductsSourceVessel = service.RetrieveMultiple(new FetchExpression(fetchXML));
 
                     var queryProductComposition = new QueryExpression("dia_productcomposition");
@@ -648,82 +680,97 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                     queryProductComposition.Criteria.AddCondition("dia_product", ConditionOperator.Equal, resultProductsSourceVessel.Entities[0].GetAttributeValue<Guid>("dia_vesselbatchcompositionid"));
 
                     var resultProductCompositions = service.RetrieveMultiple(queryProductComposition);
+                    tracingService.Trace("passou mai 10");
 
-                    foreach (var productComposition in resultProductCompositions.Entities)
-                    {
-                        tracingService.Trace("Inside productComposition");
-                        var created = false;
-                        foreach (var destinationVesselProductComposition in destVesselProductCompositions.Entities)
+
+                    if (resultProductCompositions != null)
+
+                        foreach (var productComposition in resultProductCompositions.Entities)
                         {
-                            tracingService.Trace("Inside destinationVesselProductComposition");
-                            var equalVintage = false;
-                            var equalVariety = false;
-                            var equalRegion = false;
+                            tracingService.Trace("Inside productComposition");
+                            var created = false;
 
-                            if (productComposition.GetAttributeValue<EntityReference>("dia_vintage").Id == destinationVesselProductComposition.GetAttributeValue<EntityReference>("dia_vintage").Id) equalVintage = true;
-                            if (productComposition.GetAttributeValue<EntityReference>("dia_region").Id == destinationVesselProductComposition.GetAttributeValue<EntityReference>("dia_region").Id) equalRegion = true;
-                            if (productComposition.GetAttributeValue<EntityReference>("dia_variety").Id == destinationVesselProductComposition.GetAttributeValue<EntityReference>("dia_variety").Id) equalVariety = true;
+                            if (destVesselProductCompositions != null)
 
-                            if (equalVintage == true && equalVariety == true && equalRegion == true)
-                            {
-                                tracingService.Trace("hasContent 5");
-                                tracingService.Trace("product composition percentage: " + productComposition.GetAttributeValue<decimal>("dia_percentage"));
-                                tracingService.Trace("dest vessel composition percentage: " + destinationVesselProductComposition.GetAttributeValue<decimal>("dia_percentage"));
-                                tracingService.Trace("job dest vessel quantity: " + jobDestVesselQuantity);
-                                tracingService.Trace("dest vessel quantity: " + destVesselQuantity);
-                                tracingService.Trace("dest vessel quantity before: " + destVesselOccupation);
+                                foreach (var destinationVesselProductComposition in destVesselProductCompositions.Entities)
+                                {
+                                    tracingService.Trace("Inside destinationVesselProductComposition");
+                                    var equalVintage = false;
+                                    var equalVariety = false;
+                                    var equalRegion = false;
+                                    tracingService.Trace("passou mai 11");
 
-                                var newProductCompositionBlended = new Entity("dia_productcomposition");
-                                newProductCompositionBlended["dia_percentage"] = (productComposition.GetAttributeValue<decimal>("dia_percentage") * destVesselOccupation / destVesselQuantity) + (destinationVesselProductComposition.GetAttributeValue<decimal>("dia_percentage") * destVesselOccupation / destVesselQuantity);
-                                newProductCompositionBlended["dia_vintage"] = productComposition.GetAttributeValue<EntityReference>("dia_vintage");
-                                newProductCompositionBlended["dia_region"] = productComposition.GetAttributeValue<EntityReference>("dia_region");
-                                newProductCompositionBlended["dia_variety"] = productComposition.GetAttributeValue<EntityReference>("dia_variety");
-                                newProductCompositionBlended["dia_product"] = new EntityReference("dia_vesselbatchcomposition", productId);
+                                    if (productComposition.GetAttributeValue<EntityReference>("dia_vintage").Id == destinationVesselProductComposition.GetAttributeValue<EntityReference>("dia_vintage").Id) equalVintage = true;
+                                    if (productComposition.GetAttributeValue<EntityReference>("dia_region").Id == destinationVesselProductComposition.GetAttributeValue<EntityReference>("dia_region").Id) equalRegion = true;
+                                    if (productComposition.GetAttributeValue<EntityReference>("dia_variety").Id == destinationVesselProductComposition.GetAttributeValue<EntityReference>("dia_variety").Id) equalVariety = true;
+                                    tracingService.Trace("passou mai13");
+                                    if (equalVintage == true && equalVariety == true && equalRegion == true)
+                                    {
+                                        tracingService.Trace("hasContent 5");
+                                        tracingService.Trace("product composition percentage: " + productComposition.GetAttributeValue<decimal>("dia_percentage"));
+                                        tracingService.Trace("dest vessel composition percentage: " + destinationVesselProductComposition.GetAttributeValue<decimal>("dia_percentage"));
+                                        tracingService.Trace("job dest vessel quantity: " + jobDestVesselQuantity);
+                                        tracingService.Trace("dest vessel quantity: " + destVesselQuantity);
+                                        tracingService.Trace("dest vessel quantity before: " + destVesselOccupation);
+                                        tracingService.Trace("passou mai 14");
+                                        var newProductCompositionBlended = new Entity("dia_productcomposition");
+                                        newProductCompositionBlended["dia_percentage"] = (productComposition.GetAttributeValue<decimal>("dia_percentage") * destVesselOccupation / destVesselQuantity) + (destinationVesselProductComposition.GetAttributeValue<decimal>("dia_percentage") * destVesselOccupation / destVesselQuantity);
+                                        newProductCompositionBlended["dia_vintage"] = productComposition.GetAttributeValue<EntityReference>("dia_vintage");
+                                        newProductCompositionBlended["dia_region"] = productComposition.GetAttributeValue<EntityReference>("dia_region");
+                                        newProductCompositionBlended["dia_variety"] = productComposition.GetAttributeValue<EntityReference>("dia_variety");
+                                        newProductCompositionBlended["dia_product"] = new EntityReference("dia_vesselbatchcomposition", productId);
 
-                                service.Create(newProductCompositionBlended);
-                                prodCompositionToRemove.Add(productComposition.Id);
-                                aux.Add(destinationVesselProductComposition.Id);
-                                created = true;
-                            }
+                                        tracingService.Trace("passou mai 15");
+
+                                        service.Create(newProductCompositionBlended);
+                                        prodCompositionToRemove.Add(productComposition.Id);
+                                        aux.Add(destinationVesselProductComposition.Id);
+                                        created = true;
+                                        tracingService.Trace("passou mai 16");
+                                    }
+                                }
+                            if (prodCompositionToRemove.Contains(productComposition.Id)) continue;
+                            var newProductComposition = new Entity("dia_productcomposition");
+                            tracingService.Trace("source product composition: " + productComposition.GetAttributeValue<decimal>("dia_percentage"));
+                            tracingService.Trace("source product composition: " + productComposition.GetAttributeValue<decimal>("dia_percentage"));
+                            tracingService.Trace("destVesselQuantity: " + destVesselQuantity);
+                            tracingService.Trace("jobDestVesselQuantity: " + jobDestVesselQuantity);
+
+                            newProductComposition["dia_percentage"] = productComposition.GetAttributeValue<decimal>("dia_percentage") * (jobDestVesselQuantity / destVesselQuantity);
+                            newProductComposition["dia_vintage"] = productComposition.GetAttributeValue<EntityReference>("dia_vintage");
+                            newProductComposition["dia_region"] = productComposition.GetAttributeValue<EntityReference>("dia_region");
+                            newProductComposition["dia_variety"] = productComposition.GetAttributeValue<EntityReference>("dia_variety");
+                            newProductComposition["dia_product"] = new EntityReference("dia_vesselbatchcomposition", productId);
+
+                            service.Create(newProductComposition);
+
+                            tracingService.Trace("passou mai 17");
                         }
-                        if (prodCompositionToRemove.Contains(productComposition.Id)) continue;
-                        var newProductComposition = new Entity("dia_productcomposition");
-                        tracingService.Trace("source product composition: " + productComposition.GetAttributeValue<decimal>("dia_percentage"));
-                        tracingService.Trace("source product composition: " + productComposition.GetAttributeValue<decimal>("dia_percentage"));
-                        tracingService.Trace("destVesselQuantity: " + destVesselQuantity);
-                        tracingService.Trace("jobDestVesselQuantity: " + jobDestVesselQuantity);
-
-                        newProductComposition["dia_percentage"] = productComposition.GetAttributeValue<decimal>("dia_percentage") * (jobDestVesselQuantity / destVesselQuantity);
-                        newProductComposition["dia_vintage"] = productComposition.GetAttributeValue<EntityReference>("dia_vintage");
-                        newProductComposition["dia_region"] = productComposition.GetAttributeValue<EntityReference>("dia_region");
-                        newProductComposition["dia_variety"] = productComposition.GetAttributeValue<EntityReference>("dia_variety");
-                        newProductComposition["dia_product"] = new EntityReference("dia_vesselbatchcomposition", productId);
-
-                        service.Create(newProductComposition);
-                    }
 
 
                 }
             }
-            foreach (var composition in destVesselProductCompositions.Entities)
-            {
-                if (aux.Contains(composition.Id)) continue;
-                tracingService.Trace("inside foreach");
-                var vintage = composition.GetAttributeValue<EntityReference>("dia_vintage");
-                var variety = composition.GetAttributeValue<EntityReference>("dia_variety");
-                var region = composition.GetAttributeValue<EntityReference>("dia_region");
-                var totalPercentage = composition.GetAttributeValue<decimal>("dia_percentage");
 
-                var productCompositionCreate = new Entity("dia_productcomposition");
+            if (destVesselProductCompositions != null)
+                foreach (var composition in destVesselProductCompositions.Entities)
+                {
+                    if (aux.Contains(composition.Id)) continue;
+                    tracingService.Trace("inside foreach");
+                    var vintage = composition.GetAttributeValue<EntityReference>("dia_vintage");
+                    var variety = composition.GetAttributeValue<EntityReference>("dia_variety");
+                    var region = composition.GetAttributeValue<EntityReference>("dia_region");
+                    var totalPercentage = composition.GetAttributeValue<decimal>("dia_percentage");
 
-                productCompositionCreate.Attributes["dia_name"] = JobDestinationVessel.GetAttributeValue<EntityReference>("dia_vessel").Name + " " + JobDestinationVessel.GetAttributeValue<EntityReference>("dia_batch").Name;
-                productCompositionCreate.Attributes["dia_vintage"] = vintage;
-                productCompositionCreate.Attributes["dia_variety"] = variety;
-                productCompositionCreate.Attributes["dia_region"] = region;
-                productCompositionCreate.Attributes["dia_percentage"] = totalPercentage * (destVesselOccupation / destVesselQuantity);
-                productCompositionCreate.Attributes["dia_product"] = new EntityReference("dia_vesselbatchcomposition", productId);
-                service.Create(productCompositionCreate);
-            }
+                    var productCompositionCreate = new Entity("dia_productcomposition");
+
+                    productCompositionCreate.Attributes["dia_name"] = JobDestinationVessel.GetAttributeValue<EntityReference>("dia_vessel").Name + " " + JobDestinationVessel.GetAttributeValue<EntityReference>("dia_batch").Name;
+                    productCompositionCreate.Attributes["dia_vintage"] = vintage;
+                    productCompositionCreate.Attributes["dia_variety"] = variety;
+                    productCompositionCreate.Attributes["dia_region"] = region;
+                    productCompositionCreate.Attributes["dia_percentage"] = totalPercentage * (destVesselOccupation / destVesselQuantity);
+                    productCompositionCreate.Attributes["dia_product"] = new EntityReference("dia_vesselbatchcomposition", productId);
+                    service.Create(productCompositionCreate);
+                }
         }
         public void CreateUpdateVesselBatchComposition(IOrganizationService service, ITracingService tracingService, Entity destinationVessel, Entity targetEntity, string jobType, decimal vesselOccupation)
         {
@@ -876,7 +923,10 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
         }*/
         public EntityCollection retrieveDestinationVesselProductCompositions(IOrganizationService service, ITracingService tracingService, Entity JobDestinationVessel)
         {
+            tracingService.Trace("entrou no retrive 1");
             EntityCollection destVesselProductCompositions = new EntityCollection();
+
+            tracingService.Trace("entrou no retrive 2");
 
             var fetchXML = $@"<fetch top='2'>
                       <entity name='dia_vesselbatchcomposition' >
@@ -888,16 +938,32 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
                       </entity>
                     </fetch>";
 
+
+            tracingService.Trace("entrou no retrive 3");
+
             var resultProductsDestinationVessel = service.RetrieveMultiple(new FetchExpression(fetchXML));
-            tracingService.Trace("VesselId: " + JobDestinationVessel.GetAttributeValue<EntityReference>("dia_vessel").Id);
-            tracingService.Trace("ProductId: " + resultProductsDestinationVessel.Entities[1].GetAttributeValue<Guid>("dia_vesselbatchcompositionid"));
+            if (resultProductsDestinationVessel.Entities.Count < 2)
+            {
+
+                tracingService.Trace("entrou no if");
+                return null;
+            }
+
+            tracingService.Trace("entrou no retrive 4");
+
             var queryProductComposition = new QueryExpression("dia_productcomposition");
+            tracingService.Trace("entrou no retrive 4.1");
             queryProductComposition.ColumnSet.AddColumns("dia_percentage", "dia_vintage", "dia_region", "dia_variety");
+            tracingService.Trace("entrou no retrive 4.2");
             queryProductComposition.Criteria.AddCondition("dia_product", ConditionOperator.Equal, resultProductsDestinationVessel.Entities[1].GetAttributeValue<Guid>("dia_vesselbatchcompositionid"));
+            tracingService.Trace("entrou no retrive 4.3");
+            tracingService.Trace("entrou no retrive 5");
 
             destVesselProductCompositions = service.RetrieveMultiple(queryProductComposition);
-            tracingService.Trace("destVesselProductCompositions Count: " + destVesselProductCompositions.Entities.Count);
+
             return destVesselProductCompositions;
+
+            tracingService.Trace("entrou no retrive 6");
         }
         /*public decimal retrieveSourceVesselsQuantitySum(IOrganizationService service, ITracingService tracingService, EntityCollection resultsSourceVessel)
         {
@@ -1312,18 +1378,18 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
             Entity targetEntity = (Entity)context.InputParameters["Target"];
             var JobDestLogic = new JobDestinationEntity();
-            tracingService.Trace("1");
+
             EntityCollection GetDestinationQuantity = JobDestLogic.GetDestinationQuantity(service, targetEntity.GetAttributeValue<EntityReference>("dia_job"));
-            tracingService.Trace("2");
+
             var JobSourceLogic = new JobSourceEntity();
             EntityCollection GetQuantity = JobSourceLogic.GetQuantity(service, targetEntity.GetAttributeValue<EntityReference>("dia_job"));
-            tracingService.Trace("3");
+
             var jobType = service.Retrieve(targetEntity.GetAttributeValue<EntityReference>("dia_job").LogicalName, targetEntity.GetAttributeValue<EntityReference>("dia_job").Id, new ColumnSet("dia_type"));
-            tracingService.Trace("4");
+
             var variance = Convert.ToInt32(GetQuantity.Entities[0].GetAttributeValue<AliasedValue>("Quantity").Value) - Convert.ToInt32(GetDestinationQuantity.Entities[0].GetAttributeValue<AliasedValue>("Quantity").Value);
             if (jobType.Contains("dia_type") && jobType.GetAttributeValue<OptionSetValue>("dia_type") != null && jobType.GetAttributeValue<OptionSetValue>("dia_type").Value == 914440001)
             {
-                tracingService.Trace("5");
+
                 decimal variancepercentage = 0;
 
                 if (Convert.ToInt32(GetDestinationQuantity.Entities[0].GetAttributeValue<AliasedValue>("Quantity").Value) != 0)
@@ -1338,29 +1404,31 @@ namespace Disruptive_Advantage_Customization.BusinessLogicHelper
 
                 tracingService.Trace("variance" + variance);
                 var jobUpdate = new Entity(targetEntity.GetAttributeValue<EntityReference>("dia_job").LogicalName, targetEntity.GetAttributeValue<EntityReference>("dia_job").Id);
-                tracingService.Trace("6");
+
                 jobUpdate.Attributes["dia_variance"] = variance;
-                tracingService.Trace("7");
+
                 jobUpdate.Attributes["dia_variancepercentage"] = variancepercentage;
-                tracingService.Trace("8");
+
                 service.Update(jobUpdate);
-                tracingService.Trace("9");
+
 
             }
         }
 
         public void VesselPostCreate(IOrganizationService service, IPluginExecutionContext context, ITracingService tracingService)
         {
-
+            tracingService.Trace("VessePostcreate 1");
             Entity targetEntity = (Entity)context.InputParameters["Target"];
-
+            tracingService.Trace("VessePostcreate 2");
             if (!targetEntity.Contains("dia_occupation"))
             {
-
+                tracingService.Trace("VessePostcreate 3");
                 var VesselUpdate = new Entity(targetEntity.LogicalName, targetEntity.Id);
+                tracingService.Trace("VessePostcreate 4");
                 VesselUpdate.Attributes["dia_occupation"] = 0.00;
+                tracingService.Trace("VessePostcreate 5");
                 service.Update(VesselUpdate);
-
+                tracingService.Trace("VessePostcreate 6");
             }
 
 
