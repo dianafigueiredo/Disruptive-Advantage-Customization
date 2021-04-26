@@ -1,21 +1,43 @@
 function onLoadJobDestinationRibbon(executionContext) {
     var formContext = executionContext.getFormContext();
+    ValidateForm(formContext);
     VerifyRemainingCapacity(formContext);
     PopulateFields(executionContext);
+    
     formContext.getAttribute("dia_quantity").addOnChange(quantityOnChange);
     //formContext.getAttribute("dia_vessel").addOnChange(vesselOnChange);
     formContext.getAttribute("dia_vessel").addOnChange(PopulateFields);
     formContext.getAttribute("dia_postvolume").addOnChange(PopulateFields);
+    formContext.getAttribute("dia_extractionrate").addOnChange(PopulateFields);
+   
 }
 function onSave(executionContext) {
     var formContext = executionContext.getFormContext();
     PopulateVesselField(formContext);
+}
+function ValidateForm(formContext) {
+    //if intake booking or job
+    var formType = formContext.getAttribute("dia_formtype").getValue();
+
+    if (formType == "Intake") {
+
+        formContext.getControl("dia_job").setVisible(false);
+
+
+    }
+
+    else {
+
+        formContext.getControl("dia_intakebooking").setVisible(false);
+    }
+       
 }
 function PopulateVesselField(formContext) {
     var vesselDropDown = formContext.getAttribute("dia_vesseldropdown").getValue();
     var vesselName = vesselDropDown.split("_")[0];
     var vesselId = vesselDropDown.split("_")[1];
 
+    var lookupVessel = new Array();
     var lookupVessel = new Array();
     lookupVessel[0] = new Object();
     lookupVessel[0].id = vesselId.replace(" ", "").replace(" ", "");
@@ -176,6 +198,7 @@ function VerifyRemainingCapacity(formContext) {
 }
 
 function PopulateFields(executionContext) {
+
     var formContext = executionContext.getFormContext();
     if (formContext.getAttribute("dia_job").getValue() == null) return;
     var jobId = formContext.getAttribute("dia_job").getValue()[0].id;
@@ -505,6 +528,60 @@ function PopulateFields(executionContext) {
         }
 
     }
+
+    if (jobtype == 587800001) { //crush/press
+
+        if (formContext.getAttribute("dia_job").getValue() == null) return;
+
+        var JobId = formContext.getAttribute("dia_job").getValue()[0].id;
+        var UpdateQuantity = 0.00;
+
+        var fetchXml = [
+            "<fetch aggregate='true'>",
+            "  <entity name='dia_load'>",
+            "    <attribute name='dia_totalnet' alias='SumTotal' aggregate='sum' />",
+            "    <filter>",
+            "      <condition attribute='dia_jobs' operator='eq' value='", JobId, "'/>",
+            "    </filter>",
+            "  </entity>",
+            "</fetch>",
+        ].join("");
+
+
+        var reqName = new XMLHttpRequest();
+        reqName.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_loads?fetchXml=" + encodeURIComponent(fetchXml), false);
+        reqName.setRequestHeader("OData-MaxVersion", "4.0");
+        reqName.setRequestHeader("OData-Version", "4.0");
+        reqName.setRequestHeader("Accept", "application/json");
+        reqName.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        reqName.onreadystatechange = function () {
+            if (this.readyState === 4) {
+                reqName.onreadystatechange = null;
+                if (this.status === 200) {
+                    var results = JSON.parse(this.response);
+                    if (results.value != null) {
+                        for (var i = 0; i < results.value.length; i++) {
+
+
+                            var SumTotal = results.value[i]["SumTotal"];
+                            var ExtractRate = formContext.getAttribute("dia_extractionrate").getValue();
+
+
+                            var UpdateQuantity = 0;
+                            UpdateQuantity = SumTotal * ExtractRate;
+
+                            formContext.getAttribute("dia_quantity").setValue(UpdateQuantity);
+
+                        }
+                    }
+                }
+
+            }
+        };
+        reqName.send();
+
+
+    }
 }
 
 function GetQuantity(formContext, vesselId) {
@@ -660,6 +737,7 @@ function GetPlannedInAdvanced(formContext, vesselId, scheduledStart) {
     ].join("");
 
 
+
     var reqVessel = new XMLHttpRequest();
     reqVessel.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_jobdestinationvessels?fetchXml=" + encodeURIComponent(fetchXml), false);
     reqVessel.setRequestHeader("OData-MaxVersion", "4.0");
@@ -764,3 +842,31 @@ function OpenForm(formContext) {
             console.log(error);
         });*/
 }
+function OpenFormFromIntake(formContext) {
+
+    var RecordId = formContext.data.entity.getEntityReference();
+    var jobName = formContext.getAttribute("dia_name").getValue();
+    var batch = formContext.getAttribute("dia_batch").getValue();
+    var quantiy = formContext.getAttribute("dia_quantity").getValue();
+    var entityFormOptions = {};
+    entityFormOptions["entityName"] = "dia_jobdestinationvessel";
+   
+
+    // Set default values for the Contact form
+    var formParameters = {};
+
+    formParameters["dia_intakebooking"] = RecordId;
+    formParameters["dia_batch"] = batch;
+    formParameters["dia_formtype"] = "Intake";
+    formParameters["dia_quantity"] = quantiy;
+    // Open the form.
+    Xrm.Navigation.openForm(entityFormOptions, formParameters).then(
+        function (success) {
+            console.log(success);
+        },
+        function (error) {
+            console.log(error);
+        });
+   
+}
+

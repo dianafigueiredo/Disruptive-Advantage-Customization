@@ -157,3 +157,55 @@ function GetSourceVessel(executionContext, values) {
     formContext.getControl("dia_vessel").addCustomFilter(jobFilter, "dia_vessel");
 
 }
+
+function ChangeConsumptionType(executionContext) {
+
+    var formContext = executionContext.getFormContext();
+    if (formContext.data.entity._entityId.guid == null) return;
+
+    var JobAddID = formContext.data.entity._entityId.guid;
+
+
+    var fetchXml = [
+        "<fetch>",
+        "  <entity name='dia_jobadditive'>",
+        "    <attribute name='dia_consumptiontype' />",
+        "    <filter>",
+        "      <condition attribute='dia_jobadditiveid' operator='eq' value='", JobAddID, "'/>",
+        "    </filter>",
+        "  </entity>",
+        "</fetch>",
+    ].join("");
+
+    var req = new XMLHttpRequest();
+    req.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_jobadditives?fetchXml=" + encodeURIComponent(fetchXml), false);
+    req.setRequestHeader("OData-MaxVersion", "4.0");
+    req.setRequestHeader("OData-Version", "4.0");
+    req.setRequestHeader("Accept", "application/json");
+    req.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+    req.onreadystatechange = function () {
+        if (this.readyState === 4) {
+            req.onreadystatechange = null;
+            if (this.status === 200) {
+                var results = JSON.parse(this.response);
+                if (results.value != null) {
+                    for (var i = 0; i < results.value.length; i++) {
+
+                        var consumptiontype = results.value[i]["dia_consumptiontype"];
+
+                        if (consumptiontype == 587800000) {
+
+
+
+                        }
+
+                    }
+                }
+
+            }
+        }
+    };
+    req.send();
+    
+
+}

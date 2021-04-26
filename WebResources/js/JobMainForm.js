@@ -133,7 +133,7 @@ function QuantityLeft(executionContext) {
 
 	if (quantitySources > quantityDestinations) {
 		var aux = parseInt(quantitySources) - parseInt(quantityDestinations);
-		formContext.ui.setFormNotification("There are still " + aux + "L not allocated in a Destination Vessel.", "INFO", "1")
+		//formContext.ui.setFormNotification("There are still " + aux + "L not allocated in a Destination Vessel.", "INFO", "1")
     }
 }
 function setVisibleControl(formContext, controlName, state){
@@ -182,16 +182,17 @@ function jobTypeOnChange(executionContext) {
 	var intake = formContext.getAttribute('dia_type').getValue();
 	
 	if (intake == 914440000) { //InSitu
-		formContext.ui.tabs.get("Composition").setVisible(false);	
-        setVisibleControl(formContext, "dia_batch", false);
+		formContext.ui.tabs.get("Composition").setVisible(false);
+		setVisibleControl(formContext, "dia_batch", false);
 		setVisibleControl(formContext, "SourceVessel", false);
 		setVisibleControl(formContext, "DestinationVessel", false);
 		setVisibleControl(formContext, "JobDestinationVessel", true);
 		setVisibleControl(formContext, "dia_quantity", false);
-		
-    }
+		setVisibleControl(formContext, "Fruit", false);
+
+	}
 	else if (intake == 914440001) { //Transfer
-		formContext.ui.tabs.get("Composition").setVisible(false);	
+		formContext.ui.tabs.get("Composition").setVisible(false);
 		setVisibleControl(formContext, "dia_batch", false);
 		setVisibleControl(formContext, "dia_variance", true);
 		setVisibleControl(formContext, "dia_variancepercentage", true);
@@ -203,13 +204,15 @@ function jobTypeOnChange(executionContext) {
 		setVisibleControl(formContext, "dia_quantity", true);
 		setRequiredLevelControl(formContext, "dia_additive", "none");
 		//setRequiredLevelControl(formContext, "dia_quantity", "required");
-		
-    }
+		setVisibleControl(formContext, "Fruit", false);
+
+	}
 	else if (intake == 914440002) { //Intake
 
 
-		 formContext.ui.tabs.get("Composition").setVisible(true);	
-        setVisibleControl(formContext, "dia_batch", true);
+		formContext.ui.tabs.get("Composition").setVisible(true);
+
+		setVisibleControl(formContext, "dia_batch", true);
 		setVisibleControl(formContext, "SourceVessel", false);
 		setVisibleControl(formContext, "DestinationVessel", true);
 		setVisibleControl(formContext, "JobDestinationVessel", false);
@@ -219,11 +222,12 @@ function jobTypeOnChange(executionContext) {
 		setVisibleControl(formContext, "dia_variance", false);
 		setVisibleControl(formContext, "dia_variancepercentage", false);
 		setVisibleControl(formContext, "dia_reason", false);
-		
-    }
+		setVisibleControl(formContext, "Fruit", false);
+
+	}
 	else if (intake == 914440003) { //Dispatch
-		formContext.ui.tabs.get("Composition").setVisible(false);	
-        setVisibleControl(formContext, "dia_batch", false);
+		formContext.ui.tabs.get("Composition").setVisible(false);
+		setVisibleControl(formContext, "dia_batch", false);
 		setVisibleControl(formContext, "SourceVessel", true);
 		setVisibleControl(formContext, "DestinationVessel", false);
 		setVisibleControl(formContext, "JobDestinationVessel", false);
@@ -232,8 +236,15 @@ function jobTypeOnChange(executionContext) {
 		setVisibleControl(formContext, "dia_variance", false);
 		setVisibleControl(formContext, "dia_variancepercentage", false);
 		setVisibleControl(formContext, "dia_reason", false);
-		
-    }
+		setVisibleControl(formContext, "Fruit", false);
+
+	} else if (intake == 587800001) { //Crush/Press
+		setVisibleControl(formContext, "SourceVessel", false);
+		setVisibleControl(formContext, "Fruit", true);
+		setVisibleControl(formContext, "DestinationVessel", true);
+		setVisibleControl(formContext, "JobDestinationVessel", false);
+
+	}
 }
 
 /*function SaveForm(executionContext){
@@ -420,6 +431,56 @@ function percentage(executionContext) {
 		Xrm.Page.ui.tabs.get('Composition').sections.get('Detail').setVisible(true);
 
 	}
+
+}
+
+function UpdateQuantity() {
+
+	var formContext = executionContext.getFormContext();
+	var level = formContext.getAttribute('dia_level').getValue();
+
+	var fetchXml = [
+		"<fetch aggregate='true'>",
+		"  <entity name='dia_load'>",
+		"    <attribute name='dia_totalnet' alias='SumTotal' aggregate='sum' />",
+		"    <filter>",
+		"      <condition attribute='dia_jobs' operator='eq' value='", JobId, "'/>",
+		"    </filter>",
+		"  </entity>",
+		"</fetch>",
+	].join("");
+
+	var reqName = new XMLHttpRequest();
+	reqName.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_loads?fetchXml=" + encodeURIComponent(fetchXml), false);
+	reqName.setRequestHeader("OData-MaxVersion", "4.0");
+	reqName.setRequestHeader("OData-Version", "4.0");
+	reqName.setRequestHeader("Accept", "application/json");
+	reqName.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+	reqName.onreadystatechange = function () {
+		if (this.readyState === 4) {
+			reqName.onreadystatechange = null;
+			if (this.status === 200) {
+				var results = JSON.parse(this.response);
+				if (results.value != null) {
+					for (var i = 0; i < results.value.length; i++) {
+
+
+						var SumTotal = results.value[i]["SumTotal"];
+						var ExtractRate = formContext.getAttribute("dia_extractionrate").getValue();
+
+
+						var UpdateQuantity = 0;
+						UpdateQuantity = SumTotal * ExtractRate;
+
+						formContext.getAttribute("dia_quantity").setValue(UpdateQuantity);
+
+					}
+				}
+			}
+
+		}
+	};
+	reqName.send();
 
 }
 

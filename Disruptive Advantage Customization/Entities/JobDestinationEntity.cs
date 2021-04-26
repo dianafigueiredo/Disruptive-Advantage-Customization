@@ -24,7 +24,7 @@ namespace Disruptive_Advantage_Customization.Entities
 
             return vesselFills;
         }*/
-        public EntityCollection GetSourceVesselQuantity(IOrganizationService service, EntityReference destVessel, Entity jobEnt)
+        public EntityCollection GetSourceVesselQuantity(IOrganizationService service, EntityReference destVessel, Entity jobEnt, Entity intakeEnt)
         {
             var queryJobSource = new QueryExpression("dia_jobsourcevessel");
             queryJobSource.ColumnSet = new ColumnSet("dia_quantity");
@@ -33,10 +33,14 @@ namespace Disruptive_Advantage_Customization.Entities
 
             var jobLinkEntitySource = new LinkEntity("dia_jobdestinationvessel", "dia_job", "dia_job", "dia_jobid", JoinOperator.Inner);
             jobLinkEntitySource.Columns = new ColumnSet(false);
-            jobLinkEntitySource.LinkCriteria = new FilterExpression(LogicalOperator.And);
-            jobLinkEntitySource.LinkCriteria.AddCondition("dia_schelduledstart", ConditionOperator.LessEqual, (DateTime)jobEnt["dia_schelduledstart"]);
-            jobLinkEntitySource.LinkCriteria.AddCondition("statuscode", ConditionOperator.Equal, 914440001);//Completed
-            queryJobSource.LinkEntities.Add(jobLinkEntitySource);
+
+            if(jobEnt != null && jobEnt.GetAttributeValue<DateTime>("dia_schelduledstart") != DateTime.MinValue)
+            {
+                jobLinkEntitySource.LinkCriteria = new FilterExpression(LogicalOperator.And);
+                jobLinkEntitySource.LinkCriteria.AddCondition("dia_schelduledstart", ConditionOperator.LessEqual, jobEnt.GetAttributeValue<DateTime>("dia_schelduledstart"));
+                jobLinkEntitySource.LinkCriteria.AddCondition("statuscode", ConditionOperator.Equal, 914440001);//Completed
+                queryJobSource.LinkEntities.Add(jobLinkEntitySource);
+            }
 
             var vesselEmpty = service.RetrieveMultiple(queryJobSource);
 
@@ -66,7 +70,7 @@ namespace Disruptive_Advantage_Customization.Entities
 
             // Instantiate QueryExpression query
             var query = new QueryExpression("dia_jobdestinationvessel");
-            query.TopCount = 50;
+      
 
             // Add columns to query.ColumnSet
             query.ColumnSet.AddColumns("dia_vessel", "dia_vesseldropdown");

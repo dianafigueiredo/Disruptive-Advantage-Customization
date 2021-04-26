@@ -16,7 +16,7 @@ namespace Disruptive_Advantage_Customization.Entities
 
             return resultsquery;
         }
-        public EntityCollection GetVesselJobAsDestination(IOrganizationService service, EntityReference vessel, Entity jobEnt)
+        public EntityCollection GetVesselJobAsDestination(IOrganizationService service, EntityReference vessel, Entity jobEnt, Entity intakeEnt, ITracingService tracingService)
         {
             /*var query = new QueryExpression("dia_jobdestinationvessel");
             query.ColumnSet.AddColumns("dia_vessel", "dia_quantity");
@@ -37,6 +37,8 @@ namespace Disruptive_Advantage_Customization.Entities
             query_dia_job_LinkCriteria_0.AddCondition("dia_schelduledstart", ConditionOperator.LessEqual, jobEnt.GetAttributeValue<DateTime>("dia_schelduledstart"));
             */
 
+
+
             var query = new QueryExpression("dia_jobdestinationvessel");
             query.ColumnSet.AddColumns("dia_vessel", "dia_quantity");
             query.Criteria.AddCondition("dia_vessel", ConditionOperator.Equal, vessel.Id);
@@ -48,10 +50,25 @@ namespace Disruptive_Advantage_Customization.Entities
             query_dia_job.LinkCriteria.AddCondition("dia_type", ConditionOperator.Equal, 914440003);
             query_dia_job.LinkCriteria.AddCondition("dia_type", ConditionOperator.Equal, 914440001);
 
-            var query_dia_job_LinkCriteria_1 = new FilterExpression();
-            query_dia_job.LinkCriteria.AddFilter(query_dia_job_LinkCriteria_1);
-            query_dia_job_LinkCriteria_1.AddCondition("dia_schelduledstart", ConditionOperator.LessEqual, jobEnt.GetAttributeValue<DateTime>("dia_schelduledstart"));
+            if(jobEnt != null && jobEnt.GetAttributeValue<DateTime>("dia_schelduledstart") != DateTime.MinValue)
+            {
+                tracingService.Trace("jobent date: " + jobEnt.GetAttributeValue<DateTime>("dia_schelduledstart"));
+                var query_dia_job_LinkCriteria_1 = new FilterExpression();
+                query_dia_job.LinkCriteria.AddFilter(query_dia_job_LinkCriteria_1);
+                query_dia_job_LinkCriteria_1.AddCondition("dia_schelduledstart", ConditionOperator.LessEqual, jobEnt.GetAttributeValue<DateTime>("dia_schelduledstart"));
+            }
 
+            var query_dia_intakebookings = query.AddLink("dia_intakebookings", "dia_intakebooking", "dia_intakebookingsid");
+            query_dia_intakebookings.Columns.AddColumns("dia_type");
+            query_dia_intakebookings.LinkCriteria.AddCondition("dia_type", ConditionOperator.Equal, 587800000);
+
+            if(intakeEnt != null && intakeEnt.GetAttributeValue<DateTime>("dia_scheduledstart") != DateTime.MinValue)
+            {
+                tracingService.Trace("intake schedule: " + intakeEnt.GetAttributeValue<DateTime>("dia_scheduledstart"));
+                var query_dia_intakebookings_LinkCriteria_1 = new FilterExpression();
+                query_dia_intakebookings.LinkCriteria.AddFilter(query_dia_intakebookings_LinkCriteria_1);
+                query_dia_intakebookings_LinkCriteria_1.AddCondition("dia_scheduledstart", ConditionOperator.LessEqual, intakeEnt.GetAttributeValue<DateTime>("dia_scheduledstart"));
+            }
 
             EntityCollection resultsquery = service.RetrieveMultiple(query);
 

@@ -16,6 +16,8 @@ namespace Disruptive_Advantage_Customization.Workflows
 	{
         [Input("job")]
         public InArgument<string> Job { get; set; }
+        [Input("intake")]
+        public InArgument<string> Intake { get; set; }
         [Output("result")]
         public OutArgument<string> Result { get; set; }
         protected override void Execute(CodeActivityContext executionContext)
@@ -40,10 +42,21 @@ namespace Disruptive_Advantage_Customization.Workflows
                     tracingService.Trace("i: " + i);
                     var destVessel = new EntityReference(vessel.LogicalName, vessel.Id);
                     var resultAux = "";
+                    var jobEnt = new Entity();
+                    var intakeEnt = new Entity();
+                    tracingService.Trace("1");
+                    if(this.Job.Get(executionContext) != null)
+                    {
+                        var jobRef = new EntityReference("dia_job", new Guid(this.Job.Get(executionContext)));
+                        tracingService.Trace("2: " + this.Job.Get(executionContext));
+                        jobEnt = this.Job.Get(executionContext) != null ? service.Retrieve(jobRef.LogicalName, jobRef.Id, new ColumnSet("dia_schelduledstart", "dia_quantity", "dia_type")) : null;
+                    }
 
-
-                    var jobRef = new EntityReference("dia_job", new Guid(this.Job.Get(executionContext)));
-                    var jobEnt = service.Retrieve(jobRef.LogicalName, jobRef.Id, new ColumnSet("dia_schelduledstart", "dia_quantity", "dia_type"));
+                    if(this.Intake.Get(executionContext) != null)
+                    {
+                        var intakeRef = new EntityReference("dia_intakebookings", new Guid(this.Intake.Get(executionContext)));
+                        intakeEnt = this.Intake.Get(executionContext) != null ? service.Retrieve(intakeRef.LogicalName, intakeRef.Id, new ColumnSet("dia_scheduledstart", "dia_quantity", "dia_type")) : null;
+                    }
 
 
                     #region JobsToFill
@@ -51,7 +64,7 @@ namespace Disruptive_Advantage_Customization.Workflows
 
                     var JobSourceLogic = new JobSourceEntity();
                     //var vesselFills = JobDestinationLogic.GetDestinationVesselQuantity(service, jobDestination, destVessel, jobEnt);
-                    var vesselAsDestination = JobSourceLogic.GetVesselJobAsDestination(service, destVessel, jobEnt);
+                    var vesselAsDestination = JobSourceLogic.GetVesselJobAsDestination(service, destVessel, jobEnt, intakeEnt, tracingService);
 
                     var logiHelper = new LogicHelper();
                     var qtdFill = logiHelper.SumOfQuantities(vesselAsDestination, "dia_quantity", tracingService);
@@ -61,7 +74,7 @@ namespace Disruptive_Advantage_Customization.Workflows
 
                     #region JobsToEmpty
 
-                    var vessEmpty = JobDestinationLogic.GetSourceVesselQuantity(service, destVessel, jobEnt);
+                    var vessEmpty = JobDestinationLogic.GetSourceVesselQuantity(service, destVessel, jobEnt, intakeEnt);
                     var qtdDrop = logiHelper.SumOfQuantities(vessEmpty, "dia_quantity", tracingService);
                     tracingService.Trace("4");
 
@@ -92,8 +105,6 @@ namespace Disruptive_Advantage_Customization.Workflows
                         resultAux = "Unavailable";
                     }
 
-                    #region different actions
-
                     var plannedvesselOccupation = logiHelper.VesselOccupation(vesselAsDestination);
 
                     tracingService.Trace("vessel Occupation: " + plannedvesselOccupation);
@@ -101,36 +112,50 @@ namespace Disruptive_Advantage_Customization.Workflows
                     var vesselOccupation = vesselEnt.GetAttributeValue<decimal>("dia_occupation");
                     var vesselCapacity = vesselEnt.GetAttributeValue<decimal>("dia_capacity");
 
-                    var JobEntity = new EntityReference("dia_job", new Guid(this.Job.Get(executionContext)));
-                    var JobInfo = service.Retrieve(jobRef.LogicalName, JobEntity.Id, new ColumnSet("dia_schelduledstart", "dia_quantity", "dia_type"));
-                    var jobtype = JobInfo.GetAttributeValue<OptionSetValue>("dia_type") != null ? JobInfo.GetAttributeValue<OptionSetValue>("dia_type") : null;
+                    #region Job Verifications
 
+
+                    
+                    var jobtype = jobEnt.GetAttributeValue<OptionSetValue>("dia_type") != null ? jobEnt.GetAttributeValue<OptionSetValue>("dia_type") : null;
                     if (jobtype != null && (jobtype.Value == 914440002 || jobtype.Value == 914440001)) // if job type intake or transfer
                     {
-
                         if (plannedvesselOccupation != 0 )
                         {
-                            //this.Result.Set(executionContext, "Unavailable");
                             resultAux = "Unavailable";
                         }
                         if (vesselOccupation > 0 )
                         {
-                            //this.Result.Set(executionContext, "Unavailable");
                             resultAux = "Unavailable";
                         }
                     }
-
-                    if (jobtype != null && jobtype.Value == 914440000 || jobtype.Value == 914440003) //In-Situ && Dispatch
+                    if (jobtype != null && (jobtype.Value == 914440000 || jobtype.Value == 914440003)) //In-Situ && Dispatch
                     { //if job type in-situ or dispatch +
                         if (plannedvesselOccupation <= 0 && vesselOccupation <= 0)
                         {
-                            //this.Result.Set(executionContext, "Unavailable");
                             resultAux = "Unavailable";
                         }
                     }
                     if (!resultAux.Contains("Unavailable")) resultAux = "Available";
-                    #endregion
 
+                    #endregion
+                    #region Intake Verifications
+
+                    var jobTypeIntake = intakeEnt.GetAttributeValue<OptionSetValue>("dia_type") != null ? intakeEnt.GetAttributeValue<OptionSetValue>("dia_type") : null;
+
+                    if(jobTypeIntake != null && jobTypeIntake.Value == 587800000)
+                    {
+                        if (plannedvesselOccupation != 0)
+                        {
+                            resultAux = "Unavailable";
+                        }
+                        if (vesselOccupation > 0)
+                        {
+                            resultAux = "Unavailable";
+                        }
+                    }
+
+
+                    #endregion
                     users.label = vessel.GetAttributeValue<string>("dia_name") + " (" + Convert.ToInt32(vessel.GetAttributeValue<decimal>("dia_capacity")) + ") " + resultAux;
                     users.value = vessel.GetAttributeValue<string>("dia_name") + " _ " + vessel.GetAttributeValue<Guid>("dia_vesselid") + " _ " + "dia_vessel$$$" + vessel.FormattedValues["dia_type"];
                     users.type = vessel.FormattedValues["dia_type"];

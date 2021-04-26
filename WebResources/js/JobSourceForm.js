@@ -1,7 +1,13 @@
 function onLoad(executionContext) {
     var formContext = executionContext.getFormContext();
+    PopulateFields(executionContext);
     jobSource(executionContext);
+   
     formContext.getAttribute("dia_vessel").addOnChange(jobSource);
+    formContext.getAttribute("dia_quantity").addOnChange(PopulateFields);
+    formContext.getAttribute("dia_postvolume").addOnChange(PopulateFields);
+
+
 }
 function jobSource(executionContext) {
 
@@ -47,7 +53,7 @@ function jobSource(executionContext) {
 
                     formContext.getAttribute("dia_stage").setValue(lookupValueStage);
                     formContext.getAttribute("dia_batch").setValue(lookupValue);
-                    formContext.getAttribute("dia_quantity").setValue(occupation);
+                    // formContext.getAttribute("dia_quantity").setValue(occupation);
 
                 } else {
                     Xrm.Utility.alertDialog(this.statusText);
@@ -58,3 +64,68 @@ function jobSource(executionContext) {
     }
 
 }
+
+function PopulateFields(executionContext) {
+
+    var formContext = executionContext.getFormContext();
+    if (formContext.getAttribute("dia_vessel").getValue() == null) return;
+    var VesselId = formContext.getAttribute("dia_vessel").getValue()[0].id;
+
+    if (formContext.ui.getFormType() == 1) {
+        var fetchXml = [
+            "<fetch>",
+            "  <entity name='dia_vessel'>",
+            "    <attribute name='dia_occupation' />",
+            "    <filter>",
+            "      <condition attribute='dia_vesselid' operator='eq' value='", VesselId, "'/>",
+            "    </filter>",
+            "  </entity>",
+            "</fetch>",
+        ].join("");
+
+        var reqjob = new XMLHttpRequest();
+        reqjob.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.1/dia_vessels?fetchXml=" + encodeURIComponent(fetchXml), false);
+        reqjob.setRequestHeader("OData-MaxVersion", "4.0");
+        reqjob.setRequestHeader("OData-Version", "4.0");
+        reqjob.setRequestHeader("Accept", "application/json");
+        reqjob.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        reqjob.onreadystatechange = function () {
+            if (this.readyState === 4) {
+                reqjob.onreadystatechange = null;
+                if (this.status === 200) {
+                    var results = JSON.parse(this.response);
+                    if (results.value != null) {
+                        for (var i = 0; i < results.value.length; i++) {
+
+                            var VesselOccupation = results.value[i]["dia_occupation"];
+                            var Quantity = formContext.getAttribute("dia_quantity").getValue();
+
+
+                            var Result = 0;
+                            Result = VesselOccupation - Quantity;
+
+                            formContext.getAttribute("dia_prevolume").setValue(VesselOccupation);
+                            formContext.getAttribute("dia_postvolume").setValue(Result);
+
+                            var Batch = formContext.getAttribute("dia_batch").getValue();
+                            var Stage = formContext.getAttribute("dia_stage").getValue();
+
+                            formContext.getAttribute("dia_postvolumebatch").setValue(Batch);
+                            formContext.getAttribute("dia_postvolumestage").setValue(Stage);
+
+
+
+
+                        }
+                    }
+                }
+
+            }
+        };
+        reqjob.send();
+    }
+
+}
+
+
+

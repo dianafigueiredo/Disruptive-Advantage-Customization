@@ -117,5 +117,18 @@ namespace Disruptive_Advantage_Customization.Entities
 
             return ResultsAdditive;
         }
+
+        public EntityCollection GetTemplateAdditive(IOrganizationService service, EntityReference targetEntity) {
+
+            var query = new QueryExpression("dia_jobadditive");
+            query.ColumnSet.AllColumns = true;
+
+            // Define filter query.Criteria
+            query.Criteria.AddCondition("dia_jobtemplate", ConditionOperator.Equal, targetEntity.Id);
+
+            EntityCollection ResultsTemplate = service.RetrieveMultiple(query);
+
+            return ResultsTemplate;
+        }
     }
 }
